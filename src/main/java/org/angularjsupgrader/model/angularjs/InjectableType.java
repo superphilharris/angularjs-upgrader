@@ -7,7 +7,8 @@ public enum InjectableType {
     CONTROLLER("controller"),
     DIRECTIVE("directive"),
     SERVICE("service"),
-    FACTORY("factory");
+    FACTORY("factory"),
+    CONFIG("config");
 
 
     private final String identifier;
