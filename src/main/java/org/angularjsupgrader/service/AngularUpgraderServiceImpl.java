@@ -51,7 +51,7 @@ public class AngularUpgraderServiceImpl {
 
     private TsModule upgradeJsModule(JsModule jsModule, JsFile parentJsFile) {
         TsModule tsModule = new TsModule();
-        tsModule.name = camelToKebab(jsModule.name);
+        tsModule.name = camelToKebab(jsModule.name.replace(".", "-"));
         tsModule.sourcedFrom = jsModule.sourcedFrom;
 
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {

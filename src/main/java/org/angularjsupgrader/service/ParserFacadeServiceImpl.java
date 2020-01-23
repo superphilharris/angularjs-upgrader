@@ -26,7 +26,6 @@ public class ParserFacadeServiceImpl {
             InputStream inputStream = new FileInputStream(fullFilePath);
             CharStream charStream = CharStreams.fromStream(inputStream);
             JavaScriptLexer lexer = new JavaScriptLexer(charStream);
-            System.out.println("FINISHED LEXING");
             return new JavaScriptParser(new CommonTokenStream(lexer));
         } catch (FileNotFoundException e) {
             System.out.println("Could not find " + filename + " to parse");

@@ -16,8 +16,11 @@ public class Main {
 
         List<String> files = directoryFileListerService.listJsFilesInDirectory("examples/");
         for (String filename : files) {
+            System.out.println("PARSING: " + filename);
             JavaScriptParser parser = sampleFileParserService.parse(filename);
-            angularModelBuilderService.buildModelFromAngularJs(parser.program(), filename);
+            JavaScriptParser.ProgramContext program = parser.program();
+            System.out.println("BUILDING AngularJS MODEL: " + filename);
+            angularModelBuilderService.buildModelFromAngularJs(program, filename);
         }
         TsProgram tsProgram = angularUpgraderService.upgradeAngularJsProgram(angularModelBuilderService.getJsProgram());
         typeScriptFileGenerationService.generateProgram(tsProgram);
