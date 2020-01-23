@@ -1,0 +1,38 @@
+apply plugin: 'antlr'
+apply plugin: 'java'
+apply plugin: 'idea'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    antlr "org.antlr:antlr4:4.7.2"
+    compile "org.antlr:antlr4-runtime:4.7.2"
+    testCompile 'junit:junit:4.12'
+    compile group: 'com.google.guava', name: 'guava', version: '23.5-jre'
+}
+
+
+task copyBaseClasses(type: Copy) {
+    from 'src/main/resources/base-classes'
+    into 'build/generated-src/antlr/main/'
+}
+
+/*
+I tried to get it working with packages.
+But am having problems where you cannot define the package in JavaScriptParser.g4 > options > tokenVocab
+If I leave without a package prefix, then it generates the JavaScriptLexer into antlr/main,
+If I input a package prefix with dots, then it creates a folder with dots in the name under antlr/main
+If I input a package prefix with slashes, then it puts those slashes rather than dots into the generated JavascriptLexer.java file
+ */
+generateGrammarSource {
+    arguments = [
+            "JavaScriptParser.g4",
+            "-visitor"
+    ]
+}
+generateGrammarSource.finalizedBy copyBaseClasses
+
+

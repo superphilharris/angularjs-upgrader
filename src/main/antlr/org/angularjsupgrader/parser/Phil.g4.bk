@@ -1,0 +1,9 @@
+grammar Phil;
+
+@header {
+package org.angularjsupgrader.parser;
+}
+
+greeting  : 'hello' ID;
+ID  : [a-zA-Z]+ ;
+WS  : [ \t\r\n]+ -> skip ; 
