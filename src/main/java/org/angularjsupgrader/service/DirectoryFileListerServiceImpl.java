@@ -6,9 +6,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,13 +15,17 @@ import java.util.stream.Stream;
  */
 public class DirectoryFileListerServiceImpl {
 
-    public List<String> listJsFilesInDirectory(String directory) throws UpgraderException {
+    public List<String> listJsFilesInDirectory(final String directory) throws UpgraderException {
         String directoryPath = getClass().getClassLoader().getResource(directory).getPath();
-        File file = new File(directoryPath);
-        try (Stream<Path> paths = Files.walk(file.toPath())) {
-            return paths
-                    .filter(Files::isRegularFile)
-                    .map(path -> path.getFileName().toString())
+        File folder = new File(directoryPath);
+
+        try (Stream<Path> paths = Files.walk(folder.toPath())) {
+            return paths.map(Path::toString)
+                    .filter(filepath -> filepath.endsWith(".js"))
+                    .map(jsFilePath -> jsFilePath.replace(folder.toString(), "")) // Make the path relative
+                    .map(relativePath -> relativePath.replace("\\", "/")) // Get it to work on windows
+                    .map(startingWithForwardSlash -> startingWithForwardSlash.substring(1)) // Remove the starting '/'
+                    .map(withoutDir -> directory + withoutDir)
                     .collect(Collectors.toList());
         } catch (IOException e) {
             throw new UpgraderException(e);
