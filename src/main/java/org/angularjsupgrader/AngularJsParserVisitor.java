@@ -40,19 +40,22 @@ public class AngularJsParserVisitor
         JsModule module = getOrCreateModule(moduleName);
 
         // Now assign it
-        for (int i = 4; i < ctx.children.size() - 7; i += 7) {
-            String ngType = ctx.getChild(i + 1).getText();
-            String stringLiteral = ctx.getChild(i + 3).getText();
-            String assignable = ctx.getChild(i + 5).getText();
+        for (int i = 4; i < ctx.children.size() - 4; i++) {
+            if (ctx.getChild(i) instanceof JavaScriptParser.AssignableContext) {
+                String ngType = ctx.getChild(i).getText();
+                String stringLiteral = ctx.getChild(i + 2).getText();
+                String assignable = ctx.getChild(i + 4).getText();
 
-            final JsInjectable injectable = new JsInjectable();
-            injectable.type = InjectableType.getByIdentifier(ngType);
-            injectable.functionName = assignable;
-            injectable.injectableName = trimQuotes(stringLiteral);
-            module.injectables.add(injectable);
+                final JsInjectable injectable = new JsInjectable();
+                injectable.type = InjectableType.getByIdentifier(ngType);
+                injectable.functionName = assignable;
+                injectable.injectableName = trimQuotes(stringLiteral);
+                module.injectables.add(injectable);
 
-            if (injectable.type == null)
-                System.err.println("Could not determine type of '" + ngType + "' for " + injectable);
+                if (injectable.type == null)
+                    System.err.println("Could not determine type of '" + ngType + "' for " + injectable);
+                i += 4;
+            }
         }
 
         return ctx;

@@ -43,8 +43,11 @@ program
     : HashBangLine? sourceElements? EOF
     ;
 
+// TODO: currently are throwing away the anonomous config in our visitor
+
 ngModuleDeclaration
-    : NgModuleSelector OpenParen StringLiteral CloseParen
+    : NgModuleSelector OpenParen StringLiteral (Comma arrayLiteral)? CloseParen
+     (Dot assignable OpenParen arrayLiteral CloseParen)?
      (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)+
      SemiColon?
     ;
