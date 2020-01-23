@@ -43,7 +43,7 @@ public class TypeScriptFileGenerationServiceImpl {
             moduleLines.add("import {" + kebabToCamelUpperFirst(component.name) + "Component} from '" + component.name + "/" + component.name + ".component.ts';");
         }
 
-        moduleLines.add("\n// angularjs-upgrader: Originally sourced from " + module.sourcedFrom);
+        moduleLines.add("\n// angularjs-upgrader generated from " + module.sourcedFrom);
         moduleLines.add("@NgModule({");
         moduleLines.add("\timports: [],");
 

@@ -18,8 +18,9 @@ public class AngularUpgraderServiceImpl {
         TsProgram tsProgram = new TsProgram();
 
         for (JsFile jsFile : jsProgram.files) {
+            int position = 0;
             List<String> modulePath = getModulePathFromFilename(removeDotJsFromEnd(jsFile.filename));
-            TsModule tsModule = getOrCreateModuleFromPath(modulePath, tsProgram);
+            TsModule tsModule = getOrCreateModuleFromPath(modulePath, tsProgram, position);
 
             for (JsModule jsModule : jsFile.modules.values()) {
                 tsModule.childModules.add(upgradeJsModule(jsModule, jsFile));
@@ -30,23 +31,23 @@ public class AngularUpgraderServiceImpl {
         return tsProgram;
     }
 
-    private TsModule getOrCreateModuleFromPath(List<String> modulePath, AbstractTsModule currentModuleNode) {
-        if (modulePath.size() == 0) return (TsModule) currentModuleNode;
-        String nextModuleName = modulePath.get(0);
-        modulePath.remove(0);
+    private TsModule getOrCreateModuleFromPath(List<String> modulePath, AbstractTsModule currentModuleNode, int position) {
+        if (position >= modulePath.size()) return (TsModule) currentModuleNode;
+        String nextModuleName = modulePath.get(position);
 
         // Get the child if they exist
         for (TsModule childTsModule : currentModuleNode.childModules) {
             if (childTsModule.name.equals(nextModuleName)) {
-                return getOrCreateModuleFromPath(modulePath, childTsModule);
+                return getOrCreateModuleFromPath(modulePath, childTsModule, position + 1);
             }
         }
 
         // Create new module
         TsModule newModule = new TsModule();
         newModule.name = nextModuleName;
+        newModule.sourcedFrom = String.join("/", modulePath.subList(0, position + 1));
         currentModuleNode.childModules.add(newModule);
-        return getOrCreateModuleFromPath(modulePath, newModule);
+        return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
 
     private TsModule upgradeJsModule(JsModule jsModule, JsFile parentJsFile) {
