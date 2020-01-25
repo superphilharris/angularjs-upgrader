@@ -58,13 +58,14 @@ public class AngularUpgraderServiceImpl {
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
             tsModule.components.add(upgradeJsController(jsController, parentJsFile));
         }
-
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
             tsModule.services.add(upgradeJsService(jsService, parentJsFile));
         }
-
         for (JsInjectable jsFactory : getType(jsModule, InjectableType.FACTORY)) {
             tsModule.services.add(upgradeJsService(jsFactory, parentJsFile));
+        }
+        for (JsInjectable jsConfig : getType(jsModule, InjectableType.CONFIG)) {
+            tsModule.routing = upgradeJsConfig(jsConfig, tsModule);
         }
 
         return tsModule;
@@ -88,6 +89,12 @@ public class AngularUpgraderServiceImpl {
 
         return tsFunction;
     }
+
+    private TsRouting upgradeJsConfig(JsInjectable jsConfig, TsModule tsModule) {
+
+        return tsModule.routing;
+    }
+
 
     private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass) {
         JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);

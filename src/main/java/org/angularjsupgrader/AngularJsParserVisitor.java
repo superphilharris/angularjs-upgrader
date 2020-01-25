@@ -39,8 +39,20 @@ public class AngularJsParserVisitor
         String moduleName = trimQuotes(ctx.getChild(2).getText());
         JsModule module = getOrCreateModule(moduleName);
 
+        for (int i = 0; i < ctx.children.size(); i++) {
+            if (ctx.getChild(i) instanceof JavaScriptParser.NgNamedComponentDeclarationContext) {
+                visitNgNamedComponentDeclaration(
+                        (JavaScriptParser.NgNamedComponentDeclarationContext) ctx.getChild(i), module);
+            }
+            // TODO: add in the other types
+        }
+
+        return ctx;
+    }
+
+    private void visitNgNamedComponentDeclaration(JavaScriptParser.NgNamedComponentDeclarationContext ctx, JsModule module) {
         // Now assign it
-        for (int i = 4; i < ctx.children.size() - 4; i++) {
+        for (int i = 1; i < ctx.children.size() - 4; i++) {
             if (ctx.getChild(i) instanceof JavaScriptParser.AssignableContext) {
                 String ngType = ctx.getChild(i).getText();
                 String stringLiteral = ctx.getChild(i + 2).getText();
@@ -57,9 +69,12 @@ public class AngularJsParserVisitor
                 i += 4;
             }
         }
-
-        return ctx;
     }
+//
+//    @Override
+//    public Object visitNgModuleDeclarationInjectable(JavaScriptParser.NgModuleDeclarationInjectableContext ctx) {
+//
+//    }
 
     @Override
     public Object visitStatement(JavaScriptParser.StatementContext ctx) {

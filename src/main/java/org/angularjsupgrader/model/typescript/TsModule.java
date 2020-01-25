@@ -13,6 +13,7 @@ public class TsModule extends AbstractTsModule {
     public String sourcedFrom; // what file the original angularJs came from
     public List<TsComponent> components = new LinkedList<>();
     public List<TsService> services = new LinkedList<>();
+    public TsRouting routing = new TsRouting();
 
     @Override
     public String toString() {

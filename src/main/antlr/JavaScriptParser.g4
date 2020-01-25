@@ -47,9 +47,14 @@ program
 
 ngModuleDeclaration
     : NgModuleSelector OpenParen StringLiteral (Comma arrayLiteral)? CloseParen
-     (Dot assignable OpenParen arrayLiteral CloseParen)?
-     (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)+
+    ngModuleDeclarationInjectable+
      SemiColon?
+    ;
+
+ngModuleDeclarationInjectable
+    : (Dot assignable OpenParen assignable CloseParen)                      # NgComponentInjectableDeclaration
+    | (Dot assignable OpenParen arrayLiteral CloseParen)                    # NgComponentWithInjectionsDeclaration
+    | (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)  # NgNamedComponentDeclaration
     ;
 
 // Everything below is custom
