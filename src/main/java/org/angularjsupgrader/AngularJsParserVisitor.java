@@ -41,8 +41,10 @@ public class AngularJsParserVisitor
 
         for (int i = 0; i < ctx.children.size(); i++) {
             if (ctx.getChild(i) instanceof JavaScriptParser.NgNamedComponentDeclarationContext) {
-                visitNgNamedComponentDeclaration(
-                        (JavaScriptParser.NgNamedComponentDeclarationContext) ctx.getChild(i), module);
+                visitNgNamedComponentDeclaration((JavaScriptParser.NgNamedComponentDeclarationContext) ctx.getChild(i), module);
+            }
+            if (ctx.getChild(i) instanceof JavaScriptParser.NgComponentInjectableDeclarationContext) {
+                visitNgComponentInjectableDeclaration((JavaScriptParser.NgComponentInjectableDeclarationContext) ctx.getChild(i), module);
             }
             // TODO: add in the other types
         }
@@ -50,31 +52,34 @@ public class AngularJsParserVisitor
         return ctx;
     }
 
+    private void visitNgComponentInjectableDeclaration(JavaScriptParser.NgComponentInjectableDeclarationContext ctx, JsModule module) {
+        String ngType = ctx.getChild(1).getText();
+        String assignable = ctx.getChild(3).getText();
+
+        final JsInjectable injectable = new JsInjectable();
+        injectable.type = InjectableType.getByIdentifier(ngType);
+        injectable.functionName = assignable;
+        module.injectables.add(injectable);
+
+        if (injectable.type != InjectableType.CONFIG)
+            System.err.println("Invalid definition " + injectable + " when visiting NgComponentInjectableDeclaration");
+    }
+
     private void visitNgNamedComponentDeclaration(JavaScriptParser.NgNamedComponentDeclarationContext ctx, JsModule module) {
         // Now assign it
-        for (int i = 1; i < ctx.children.size() - 4; i++) {
-            if (ctx.getChild(i) instanceof JavaScriptParser.AssignableContext) {
-                String ngType = ctx.getChild(i).getText();
-                String stringLiteral = ctx.getChild(i + 2).getText();
-                String assignable = ctx.getChild(i + 4).getText();
+        String ngType = ctx.getChild(1).getText();
+        String stringLiteral = ctx.getChild(3).getText();
+        String assignable = ctx.getChild(5).getText();
 
-                final JsInjectable injectable = new JsInjectable();
-                injectable.type = InjectableType.getByIdentifier(ngType);
-                injectable.functionName = assignable;
-                injectable.injectableName = trimQuotes(stringLiteral);
-                module.injectables.add(injectable);
+        final JsInjectable injectable = new JsInjectable();
+        injectable.type = InjectableType.getByIdentifier(ngType);
+        injectable.functionName = assignable;
+        injectable.injectableName = trimQuotes(stringLiteral);
+        module.injectables.add(injectable);
 
-                if (injectable.type == null)
-                    System.err.println("Could not determine type of '" + ngType + "' for " + injectable);
-                i += 4;
-            }
-        }
+        if (injectable.type == null)
+            System.err.println("Could not determine type of '" + ngType + "' for " + injectable);
     }
-//
-//    @Override
-//    public Object visitNgModuleDeclarationInjectable(JavaScriptParser.NgModuleDeclarationInjectableContext ctx) {
-//
-//    }
 
     @Override
     public Object visitStatement(JavaScriptParser.StatementContext ctx) {
