@@ -27,7 +27,6 @@ public class AngularUpgraderServiceImpl {
             }
         }
 
-        System.out.println("Upgraded: " + tsProgram);
         return tsProgram;
     }
 

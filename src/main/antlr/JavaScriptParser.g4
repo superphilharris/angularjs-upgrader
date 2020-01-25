@@ -52,9 +52,10 @@ ngModuleDeclaration
     ;
 
 ngModuleDeclarationInjectable
-    : (Dot assignable OpenParen assignable CloseParen)                      # NgComponentInjectableDeclaration
-    | (Dot assignable OpenParen arrayLiteral CloseParen)                    # NgComponentWithInjectionsDeclaration
-    | (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)  # NgNamedComponentDeclaration
+    : (Dot assignable OpenParen arrayLiteral CloseParen)                        # NgComponentWithInjectionsDeclaration
+    | (Dot assignable OpenParen assignable CloseParen)                          # NgComponentInjectableDeclaration
+//    | (Dot assignable OpenParen StringLiteral Comma arrayLiteral CloseParen)    # NgInlineComponentDeclaration
+    | (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)      # NgNamedComponentDeclaration
     ;
 
 // Everything below is custom

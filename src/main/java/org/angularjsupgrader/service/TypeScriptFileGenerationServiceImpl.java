@@ -26,7 +26,6 @@ public class TypeScriptFileGenerationServiceImpl {
 
     private void generateModule(TsModule module, String parentDir) throws UpgraderException {
         String directory = parentDir + module.name + "/";
-        System.out.println("Generating " + module.name + " in " + directory);
         createDirectory(directory);
 
         for (TsComponent component : module.components) {
