@@ -45,7 +45,7 @@ public class AngularUpgraderServiceImpl {
         // Create new module
         TsModule newModule = new TsModule();
         newModule.name = nextModuleName;
-        newModule.sourcedFrom = String.join("/", modulePath.subList(0, position + 1));
+        newModule.sourcedFrom = "the filepath " + String.join("/", modulePath.subList(0, position + 1));
         currentModuleNode.childModules.add(newModule);
         return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
