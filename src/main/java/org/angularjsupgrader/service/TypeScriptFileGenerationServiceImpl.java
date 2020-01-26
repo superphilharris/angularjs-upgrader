@@ -1,5 +1,6 @@
 package org.angularjsupgrader.service;
 
+import org.angularjsupgrader.UpgradePathServiceImpl;
 import org.angularjsupgrader.exception.UpgraderException;
 import org.angularjsupgrader.model.typescript.*;
 
@@ -16,6 +17,13 @@ import java.util.stream.Collectors;
  * Created by Philip Harris on 18/01/2020
  */
 public class TypeScriptFileGenerationServiceImpl {
+
+    private final UpgradePathServiceImpl upgradePathService;
+
+    public TypeScriptFileGenerationServiceImpl() {
+        this.upgradePathService = new UpgradePathServiceImpl();
+    }
+
 
     public void generateProgram(TsProgram program) throws UpgraderException {
         String outputDir = "upgradedAngular/";
@@ -76,7 +84,7 @@ public class TypeScriptFileGenerationServiceImpl {
         // Controller
         List<String> controllerLines = new LinkedList<>();
         controllerLines.add("import {Component, OnInit} from '@angular/core';");
-        // TODO: add other imports
+        controllerLines.addAll(getImports(component));
         controllerLines.add(
                 "\n" +
                         "@Component({\n" +
@@ -139,8 +147,9 @@ public class TypeScriptFileGenerationServiceImpl {
         String className = kebabToCamelUpperFirst(service.name) + "Service";
         List<String> serviceLines = new LinkedList<>();
         serviceLines.add("import {Injectable} from '@angular/core';\n" +
-                "import {Observable} from 'rxjs';\n\n");
-        serviceLines.add("@Injectable({\n" +
+                "import {Observable} from 'rxjs';");
+        serviceLines.addAll(getImports(service));
+        serviceLines.add("\n\n@Injectable({\n" +
                 "\tprovidedIn: 'root'\n" +
                 "})\n" +
                 "export class " + className + " {");
@@ -193,11 +202,19 @@ public class TypeScriptFileGenerationServiceImpl {
 
         List<String> constructorLines = new LinkedList<>();
         constructorLines.add("\tconstructor(");
-        for (String dependency : tsClass.dependencies) {
-            constructorLines.add("\t\tprivate " + dependency + ": " + dependency);
-        }
-        constructorLines.add("\t) {}");
+        constructorLines.add(tsClass.dependencies.stream().map((dependency) -> {
+            TsDependency tsDependency = upgradePathService.getDependency(dependency, tsClass);
+            return "\t\tprivate " + lowerFirst(tsDependency.name) + ": " + tsDependency.name;
+        }).collect(Collectors.joining(",\n")));
+        constructorLines.add("\t) { }");
         return constructorLines;
+    }
+
+    private List<String> getImports(AbstractTsClass tsClass) {
+        return tsClass.dependencies.stream().map((dependency) -> {
+            TsDependency tsDependency = upgradePathService.getDependency(dependency, tsClass);
+            return "import {" + tsDependency.name + "} from '" + tsDependency.packagePath + "';";
+        }).collect(Collectors.toList());
     }
 
     private void writeFile(List<String> fileLines, String filepath) throws UpgraderException {
@@ -225,5 +242,10 @@ public class TypeScriptFileGenerationServiceImpl {
             camelCase += part.substring(0, 1).toUpperCase() + part.substring(1);
         }
         return camelCase;
+    }
+
+    private String lowerFirst(String upperFirst) {
+        if (upperFirst == null || upperFirst.length() == 0) return upperFirst;
+        return upperFirst.substring(0, 1).toLowerCase() + upperFirst.substring(1);
     }
 }
