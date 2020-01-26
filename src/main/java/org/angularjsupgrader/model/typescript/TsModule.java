@@ -14,6 +14,7 @@ public class TsModule extends AbstractTsModule {
     public List<TsComponent> components = new LinkedList<>();
     public List<TsService> services = new LinkedList<>();
     public TsRouting routing = new TsRouting();
+    public AbstractTsModule parent;
 
     @Override
     public String toString() {

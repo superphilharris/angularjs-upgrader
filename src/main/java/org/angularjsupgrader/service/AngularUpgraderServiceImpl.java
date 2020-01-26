@@ -23,7 +23,7 @@ public class AngularUpgraderServiceImpl {
             TsModule tsModule = getOrCreateModuleFromPath(modulePath, tsProgram, position);
 
             for (JsModule jsModule : jsFile.modules.values()) {
-                tsModule.childModules.add(upgradeJsModule(jsModule, jsFile));
+                tsModule.childModules.add(upgradeJsModule(jsModule, jsFile, tsModule));
             }
         }
 
@@ -45,23 +45,25 @@ public class AngularUpgraderServiceImpl {
         TsModule newModule = new TsModule();
         newModule.name = nextModuleName;
         newModule.sourcedFrom = "the filepath " + String.join("/", modulePath.subList(0, position + 1));
+        newModule.parent = currentModuleNode;
         currentModuleNode.childModules.add(newModule);
         return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
 
-    private TsModule upgradeJsModule(JsModule jsModule, JsFile parentJsFile) {
+    private TsModule upgradeJsModule(JsModule jsModule, JsFile parentJsFile, TsModule parentTsModule) {
         TsModule tsModule = new TsModule();
         tsModule.name = camelToKebab(jsModule.name.replace(".", "-"));
         tsModule.sourcedFrom = jsModule.sourcedFrom;
+        tsModule.parent = parentTsModule;
 
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
-            tsModule.components.add(upgradeJsController(jsController, parentJsFile));
+            tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
         }
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
-            tsModule.services.add(upgradeJsService(jsService, parentJsFile));
+            tsModule.services.add(upgradeJsService(jsService, parentJsFile, tsModule));
         }
         for (JsInjectable jsFactory : getType(jsModule, InjectableType.FACTORY)) {
-            tsModule.services.add(upgradeJsService(jsFactory, parentJsFile));
+            tsModule.services.add(upgradeJsService(jsFactory, parentJsFile, tsModule));
         }
         for (JsInjectable jsConfig : getType(jsModule, InjectableType.CONFIG)) {
             tsModule.routing = upgradeJsConfig(jsConfig, parentJsFile, tsModule);
@@ -71,10 +73,10 @@ public class AngularUpgraderServiceImpl {
     }
 
 
-    private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile) {
+    private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile, TsModule parentTsModule) {
         TsComponent tsComponent = new TsComponent();
         tsComponent.name = camelToKebab(jsController.injectableName.replace("Controller", ""));
-        return upgradeJsInjectable(jsController, parentJsFile, tsComponent);
+        return upgradeJsInjectable(jsController, parentJsFile, tsComponent, parentTsModule);
     }
 
     private TsFunction upgradeJsFunction(JsFunction jsFunction) {
@@ -96,7 +98,7 @@ public class AngularUpgraderServiceImpl {
     }
 
 
-    private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass) {
+    private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass, TsModule parentTsModule) {
         JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
         if (jsFunction != null) {
             for (JsFunction childJsFunction : jsFunction.childFunctions) {
@@ -106,6 +108,7 @@ public class AngularUpgraderServiceImpl {
             System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
         }
         tsClass.dependencies.addAll(jsInjectable.injections);
+        tsClass.parent = parentTsModule;
         return tsClass;
     }
 
@@ -125,10 +128,10 @@ public class AngularUpgraderServiceImpl {
         return null;
     }
 
-    private TsService upgradeJsService(JsInjectable jsService, JsFile parentJsFile) {
+    private TsService upgradeJsService(JsInjectable jsService, JsFile parentJsFile, TsModule parentTsModule) {
         TsService tsService = new TsService();
         tsService.name = camelToKebab(jsService.injectableName.replace("Service", ""));
-        return upgradeJsInjectable(jsService, parentJsFile, tsService);
+        return upgradeJsInjectable(jsService, parentJsFile, tsService, parentTsModule);
     }
 
     private List<String> getModulePathFromFilename(String filename) {

@@ -10,6 +10,7 @@ public abstract class AbstractTsClass {
     public String name;
     public List<TsFunction> functions = new LinkedList<>();
     public List<String> dependencies = new LinkedList<>();
+    public TsModule parent = null;
 
     @Override
     public String toString() {
