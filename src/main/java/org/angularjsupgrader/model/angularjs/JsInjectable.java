@@ -8,7 +8,8 @@ import java.util.List;
  */
 public class JsInjectable {
     public String injectableName;
-    public String functionName;
+    public String functionName; // If function is defined with a string, then the upgrader will populate the function
+    public JsFunction function; // If function is defined inline, then the visitor will populate the function
     public InjectableType type;
     public List<String> injections = new LinkedList<>();
 

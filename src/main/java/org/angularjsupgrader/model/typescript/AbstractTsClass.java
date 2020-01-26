@@ -9,6 +9,7 @@ import java.util.List;
 public abstract class AbstractTsClass {
     public String name;
     public List<TsFunction> functions = new LinkedList<>();
+    public List<String> dependencies = new LinkedList<>();
 
     @Override
     public String toString() {

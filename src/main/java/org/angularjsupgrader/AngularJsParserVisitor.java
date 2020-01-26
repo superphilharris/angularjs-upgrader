@@ -46,6 +46,9 @@ public class AngularJsParserVisitor
             if (ctx.getChild(i) instanceof JavaScriptParser.NgComponentInjectableDeclarationContext) {
                 visitNgComponentInjectableDeclaration((JavaScriptParser.NgComponentInjectableDeclarationContext) ctx.getChild(i), module);
             }
+            if (ctx.getChild(i) instanceof JavaScriptParser.NgInlineComponentDeclarationContext) {
+                visitNgInlineComponentDeclaration((JavaScriptParser.NgInlineComponentDeclarationContext) ctx.getChild(i), module);
+            }
             // TODO: add in the other types
         }
 
@@ -66,7 +69,6 @@ public class AngularJsParserVisitor
     }
 
     private void visitNgNamedComponentDeclaration(JavaScriptParser.NgNamedComponentDeclarationContext ctx, JsModule module) {
-        // Now assign it
         String ngType = ctx.getChild(1).getText();
         String stringLiteral = ctx.getChild(3).getText();
         String assignable = ctx.getChild(5).getText();
@@ -79,6 +81,25 @@ public class AngularJsParserVisitor
 
         if (injectable.type == null)
             System.err.println("Could not determine type of '" + ngType + "' for " + injectable);
+    }
+
+    private void visitNgInlineComponentDeclaration(JavaScriptParser.NgInlineComponentDeclarationContext ctx, JsModule module) {
+        String ngType = ctx.getChild(1).getText();
+        String stringLiteral = ctx.getChild(3).getText();
+        ParseTree arrayElementsList = ctx.getChild(5).getChild(1); // arrayLiteral > elementsList
+
+        final JsInjectable injectable = new JsInjectable();
+        injectable.type = InjectableType.getByIdentifier(ngType);
+        injectable.injectableName = trimQuotes(stringLiteral);
+        injectable.functionName = injectable.injectableName;
+        for (int i = 0; i < arrayElementsList.getChildCount() - 1; i++) { // The last one should be the function definition
+            if (arrayElementsList.getChild(i) instanceof JavaScriptParser.ArrayElementContext) {
+                injectable.injections.add(arrayElementsList.getChild(i).getText());
+            }
+        }
+        module.injectables.add(injectable);
+        System.err.println("Create and assign the funtion declaration below for " + injectable.injectableName);
+        visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1));
     }
 
     @Override
@@ -105,7 +126,7 @@ public class AngularJsParserVisitor
     }
 
 
-    private Object visitAndCreateFunction(String functionName, RuleNode ctx) {
+    private Object visitAndCreateFunction(String functionName, ParseTree ctx) {
         JsFunction function = new JsFunction();
         function.functionName = functionName;
 
@@ -127,7 +148,7 @@ public class AngularJsParserVisitor
         }
         function.parent = currentFunction;
         currentFunction = function;
-        Object result = super.visitChildren(ctx);
+        Object result = super.visitChildren((RuleNode) ctx);
         currentFunction = function.parent;
         return result;
     }
