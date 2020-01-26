@@ -98,7 +98,6 @@ public class AngularUpgraderServiceImpl {
 
     private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass) {
         JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
-
         if (jsFunction != null) {
             for (JsFunction childJsFunction : jsFunction.childFunctions) {
                 tsClass.functions.add(upgradeJsFunction(childJsFunction));
@@ -106,6 +105,7 @@ public class AngularUpgraderServiceImpl {
         } else {
             System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
         }
+        tsClass.dependencies.addAll(jsInjectable.injections);
         return tsClass;
     }
 

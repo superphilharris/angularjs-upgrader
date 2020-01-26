@@ -87,8 +87,8 @@ public class TypeScriptFileGenerationServiceImpl {
                         "export class " + className + " implements OnInit {\n"
         );
         // TODO: add in @Input() and @Output
-        controllerLines.add("\tconstructor() { }\n"); // TODO: add in injected services
-        controllerLines.add("\tngOnInit() {\n\n\t}\n");
+        controllerLines.addAll(getConstructor(component));
+        controllerLines.add("\n\tngOnInit() {\n\n\t}\n");
         // TODO: add in upgraded body
         controllerLines.addAll(getClassFunctionLines(component));
 
@@ -135,16 +135,6 @@ public class TypeScriptFileGenerationServiceImpl {
         writeFile(testLines, directory + component.name + ".component.spec.ts");
     }
 
-    private List<String> getClassFunctionLines(AbstractTsClass tsClass) {
-        List<String> classFunctionLines = new LinkedList<>();
-        for (TsFunction function : tsClass.functions) {
-            classFunctionLines.add("\n\t" + function.name + "(" + String.join(", ", function.arguments) + ") {");
-            // TODO: add function body, and any embedded functions
-            classFunctionLines.add("\t}");
-        }
-        return classFunctionLines;
-    }
-
     private void generateService(TsService service, String parentDirectory) throws UpgraderException {
         String className = kebabToCamelUpperFirst(service.name) + "Service";
         List<String> serviceLines = new LinkedList<>();
@@ -153,8 +143,8 @@ public class TypeScriptFileGenerationServiceImpl {
         serviceLines.add("@Injectable({\n" +
                 "\tprovidedIn: 'root'\n" +
                 "})\n" +
-                "export class " + className + " {\n" +
-                "\tconstructor() { }");
+                "export class " + className + " {");
+        serviceLines.addAll(getConstructor(service));
         serviceLines.addAll(getClassFunctionLines(service));
         serviceLines.add("}");
         writeFile(serviceLines, parentDirectory + service.name + ".service.ts");
@@ -185,6 +175,29 @@ public class TypeScriptFileGenerationServiceImpl {
                 "  });\n" +
                 "});");
         writeFile(testLines, parentDirectory + service.name + ".service.spec.ts");
+    }
+
+
+    private List<String> getClassFunctionLines(AbstractTsClass tsClass) {
+        List<String> classFunctionLines = new LinkedList<>();
+        for (TsFunction function : tsClass.functions) {
+            classFunctionLines.add("\n\t" + function.name + "(" + String.join(", ", function.arguments) + ") {");
+            // TODO: add function body, and any embedded functions
+            classFunctionLines.add("\t}");
+        }
+        return classFunctionLines;
+    }
+
+    private List<String> getConstructor(AbstractTsClass tsClass) {
+        if (tsClass.dependencies.size() == 0) return Collections.singletonList("\tconstructor() { }");
+
+        List<String> constructorLines = new LinkedList<>();
+        constructorLines.add("\tconstructor(");
+        for (String dependency : tsClass.dependencies) {
+            constructorLines.add("\t\tprivate " + dependency + ": " + dependency);
+        }
+        constructorLines.add("\t) {}");
+        return constructorLines;
     }
 
     private void writeFile(List<String> fileLines, String filepath) throws UpgraderException {

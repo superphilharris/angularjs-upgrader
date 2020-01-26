@@ -94,7 +94,7 @@ public class AngularJsParserVisitor
         injectable.functionName = injectable.injectableName;
         for (int i = 0; i < arrayElementsList.getChildCount() - 1; i++) { // The last one should be the function definition
             if (arrayElementsList.getChild(i) instanceof JavaScriptParser.ArrayElementContext) {
-                injectable.injections.add(arrayElementsList.getChild(i).getText());
+                injectable.injections.add(trimQuotes(arrayElementsList.getChild(i).getText()));
             }
         }
         module.injectables.add(injectable);
