@@ -1,9 +1,7 @@
 package org.angularjsupgrader;
 
 import com.google.common.base.CaseFormat;
-import org.angularjsupgrader.model.typescript.AbstractTsClass;
-import org.angularjsupgrader.model.typescript.TsDependency;
-import org.angularjsupgrader.model.typescript.TsService;
+import org.angularjsupgrader.model.typescript.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,21 +23,50 @@ public class UpgradePathServiceImpl {
             return libraryDependencyMap.get(jsName);
         }
         String dependencyFileName = camelToKebab(jsName.replace("Service", ""));
-        return getNewDependency(jsName, getServicePathFromSibling(dependencyFileName, tsClass, "./"));
+        return getNewDependency(jsName, getServicePathFromSibling(dependencyFileName, tsClass, ""));
     }
 
     private String getServicePathFromSibling(String dependencyFileName, AbstractTsClass tsClass, String currentPath) {
-        for (TsService service : tsClass.parent.services) {
-            if (service != tsClass) {
-                if (dependencyFileName.equals(service.name)) {
-                    return currentPath + service.name + ".service.ts";
-                }
+        String servicePath = getDependentServiceFromChildren(dependencyFileName, tsClass.parent, "./" + currentPath, tsClass);
+        if (servicePath != null) return servicePath;
+
+        for (TsModule siblingModule : tsClass.parent.childModules) {
+            String path = getDependentServiceFromChildren(dependencyFileName, siblingModule, "./" + currentPath + siblingModule.name, null);
+            if (path != null) {
+                return path;
             }
         }
 
+        AbstractTsModule parentModule = tsClass.parent.parent;
+        TsModule currentModule = tsClass.parent;
+        while (parentModule instanceof TsModule) {
+            currentPath = "../" + currentPath;
+            for (TsModule tsModule : parentModule.childModules) {
+                if (tsModule != currentModule) {
+                    String path = getDependentServiceFromChildren(dependencyFileName, tsModule, currentPath + tsModule.name + "/", null);
+                    if (path != null) return path;
+                }
+            }
+            currentModule = (TsModule) parentModule;
+            parentModule = ((TsModule) parentModule).parent;
+        }
         return null;
     }
 
+    private String getDependentServiceFromChildren(String searchForService, TsModule moduleToLookin, String currentPath, AbstractTsClass classToExclude) {
+        for (TsService service : moduleToLookin.services) {
+            if (service != classToExclude) {
+                if (searchForService.equals(service.name)) {
+                    return currentPath + service.name + ".service";
+                }
+            }
+        }
+        for (TsModule childModule : moduleToLookin.childModules) {
+            String path = getDependentServiceFromChildren(searchForService, childModule, currentPath + childModule.name + "/", classToExclude);
+            if (path != null) return path;
+        }
+        return null;
+    }
 
     private String camelToKebab(String camelCase) {
         return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, camelCase);
