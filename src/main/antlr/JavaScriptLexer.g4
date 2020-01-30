@@ -38,7 +38,8 @@ options { superClass='org.angularjsupgrader.parser.JavaScriptBaseLexer'; }
 package org.angularjsupgrader.parser;
 }
 
-NgModuleSelector:                  'angular.module';
+NgModuleSelector:               'angular.module';
+//NgInject:                       Identifier '.$inject';
 
 // Normal JS Below this line:
 

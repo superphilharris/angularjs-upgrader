@@ -43,12 +43,10 @@ program
     : HashBangLine? sourceElements? EOF
     ;
 
-// TODO: currently are throwing away the anonomous config in our visitor
-
 ngModuleDeclaration
     : NgModuleSelector OpenParen StringLiteral (Comma arrayLiteral)? CloseParen
-    ngModuleDeclarationInjectable+
-     SemiColon?
+      ngModuleDeclarationInjectable+
+      SemiColon?
     ;
 
 ngModuleDeclarationInjectable
@@ -58,10 +56,16 @@ ngModuleDeclarationInjectable
     | (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)      # NgNamedComponentDeclaration
     ;
 
+//ngInjectStatement
+//    : NgInject '=' arrayLiteral SemiColon?
+//    ;
+
 // Everything below is custom
 
 sourceElement
     : statement
+    | ngModuleDeclaration
+//    | ngInjectStatement
     ;
 
 statement
@@ -85,7 +89,6 @@ statement
     | tryStatement
     | debuggerStatement
     | functionDeclaration
-    | ngModuleDeclaration
     ;
 
 block
@@ -336,6 +339,7 @@ expressionSequence
 
 singleExpression
     : anoymousFunction                                                      # FunctionExpression
+//    | singleExpression '.' NgInject                              # MemberInjectExpression
     | Class Identifier? classTail                                           # ClassExpression
     | singleExpression '[' expressionSequence ']'                           # MemberIndexExpression
     | singleExpression '?'? '.' '#'? identifierName                         # MemberDotExpression

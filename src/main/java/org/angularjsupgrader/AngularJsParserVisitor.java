@@ -126,6 +126,25 @@ public class AngularJsParserVisitor
     }
 
 
+//    @Override
+//    public Object visitNgInjectStatement(JavaScriptParser.NgInjectStatementContext ctx) {
+//        JsInjectStatement statement = new JsInjectStatement();
+//        statement.functionName = ctx.getChild(0).getText();
+//        ParseTree arrayLiteral = ctx.getChild(2);
+//        for (int i=0; i<arrayLiteral.getChildCount(); i++) {
+//            statement.injects.add(arrayLiteral.getChild(i).getText());
+//        }
+//        currentFile.injectStatements.add(statement);
+//        return ctx;
+//    }
+
+//    @Override
+//    public Object visitMemberDotExpression(JavaScriptParser.MemberDotExpressionContext ctx) {
+//        return super.visitMemberDotExpression(ctx);
+//    }
+
+
+
     private Object visitAndCreateFunction(String functionName, ParseTree ctx) {
         JsFunction function = new JsFunction();
         function.functionName = functionName;

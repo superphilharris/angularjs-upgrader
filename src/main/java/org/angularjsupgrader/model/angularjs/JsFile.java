@@ -1,6 +1,8 @@
 package org.angularjsupgrader.model.angularjs;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -10,6 +12,7 @@ import java.util.stream.Collectors;
 public class JsFile extends AbstractJsFunctionWrapper {
     public String filename;
     public Map<String, JsModule> modules = new HashMap<>();
+    public List<JsInjectStatement> injectStatements = new LinkedList<>();
 
 
     @Override
