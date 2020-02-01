@@ -9,7 +9,8 @@ public enum InjectableType {
     SERVICE("service"),
     FACTORY("factory"),
     CONFIG("config"),
-    FILTER("filter");
+    FILTER("filter"),
+    CONSTANT("constant");
 
 
     private final String identifier;

@@ -21,10 +21,18 @@ public class UpgradePathServiceImpl {
         libraryDependencyMap.put("$window", getNewDependency("Window", "Dont Exist in Angular"));
         //libraryDependencyMap.put("$filter", getNewDependency("$filter", "$filter")); -> used to be the way to access pipes
         // libraryDependencyMap.put("$scope"); TODO: convert $scope to Input/Output
+        // $q
+        // $controller
+        // $timeout
+        // $injector
+        // $resource
+        // $upload
 
         // NGX Bootstrap
         libraryDependencyMap.put("$uibModal", getNewDependency("BsModalService", "ngx-bootstrap/modal"));
+        libraryDependencyMap.put("$modal", libraryDependencyMap.get("$uibModal"));
         libraryDependencyMap.put("$uibModalInstance", getNewDependency("BsModalRef", "ngx-bootstrap/modal"));
+        libraryDependencyMap.put("$modalInstance", libraryDependencyMap.get("$uibModalInstance"));
         libraryDependencyMap.put("toastrService", getNewDependency("ToastrService", "ngx-toastr")); // TODO: this is a custom service
     }
 

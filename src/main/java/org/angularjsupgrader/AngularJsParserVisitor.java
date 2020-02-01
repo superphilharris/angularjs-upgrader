@@ -98,7 +98,7 @@ public class AngularJsParserVisitor
             }
         }
         module.injectables.add(injectable);
-        System.err.println("Create and assign the funtion declaration below for " + injectable.injectableName);
+        System.err.println("Create and assign the function declaration below for " + injectable.injectableName);
         visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1));
     }
 
