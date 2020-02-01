@@ -10,6 +10,7 @@ public class JsFunction extends AbstractJsFunctionWrapper {
     public String functionName;
     public JsFunction parent;
     public List<String> arguments = new LinkedList<>();
+    public List<JsStatement> statements = new LinkedList<>();
 
     @Override
     public String toString() {

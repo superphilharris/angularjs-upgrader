@@ -10,4 +10,5 @@ public class TsFunction {
     public String name;
     public List<String> arguments = new LinkedList<>();
     public List<TsFunction> childFunctions = new LinkedList<>();
+    public List<TsStatement> statements = new LinkedList<>();
 }

@@ -83,6 +83,11 @@ public class AngularUpgraderServiceImpl {
         TsFunction tsFunction = new TsFunction();
         tsFunction.name = jsFunction.functionName;
         tsFunction.arguments = jsFunction.arguments;
+        for (JsStatement jsStatement : jsFunction.statements) {
+            TsStatement tsStatement = new TsStatement();
+            tsStatement.text = jsStatement.originalText; // TODO: swtich out old dependencies for new dependencies
+            tsFunction.statements.add(tsStatement);
+        }
 
         for (JsFunction childJsFunction : jsFunction.childFunctions) {
             tsFunction.childFunctions.add(upgradeJsFunction(childJsFunction));

@@ -190,11 +190,21 @@ public class TypeScriptFileGenerationServiceImpl {
     private List<String> getClassFunctionLines(AbstractTsClass tsClass) {
         List<String> classFunctionLines = new LinkedList<>();
         for (TsFunction function : tsClass.functions) {
-            classFunctionLines.add("\n\t" + function.name + "(" + String.join(", ", function.arguments) + ") {");
-            // TODO: add function body, and any embedded functions
-            classFunctionLines.add("\t}");
+            classFunctionLines.addAll(getFunctionLines(function));
         }
         return classFunctionLines;
+    }
+
+    private List<String> getFunctionLines(TsFunction function) {
+        List<String> functionLines = new LinkedList<>();
+        functionLines.add("");
+        functionLines.add("\t" + function.name + "(" + String.join(", ", function.arguments) + ") {");
+        // TODO: add function body
+        for (TsFunction childFunction : function.childFunctions) {
+            functionLines.addAll(getFunctionLines(childFunction).stream().map(line -> "\t" + line).collect(Collectors.toList()));
+        }
+        functionLines.add("\t}");
+        return functionLines;
     }
 
     private List<String> getConstructor(AbstractTsClass tsClass) {

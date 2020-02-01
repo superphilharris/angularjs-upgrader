@@ -98,16 +98,23 @@ public class AngularJsParserVisitor
             }
         }
         module.injectables.add(injectable);
-        System.err.println("Create and assign the function declaration below for " + injectable.injectableName);
         visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1));
     }
 
     @Override
     public Object visitStatement(JavaScriptParser.StatementContext ctx) {
+        if (ctx.getChildCount() != 1 || ctx.getChild(0) instanceof JavaScriptParser.FunctionDeclarationContext) {
+            return super.visitStatement(ctx);
+        }
+
         JsStatement statement = new JsStatement();
         statement.type = JavaScriptParser.RULE_statement;
         statement.originalText = ctx.getText();
-//        currentFile.statements.add(statement);
+        if (currentFunction != null) {
+            currentFunction.statements.add(statement);
+        } else {
+//            System.err.println("The statement: '" + statement.originalText + "' is not part of any function");
+        }
         return super.visitStatement(ctx);
     }
 
