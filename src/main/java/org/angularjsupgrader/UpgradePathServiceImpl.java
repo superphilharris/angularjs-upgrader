@@ -18,15 +18,17 @@ public class UpgradePathServiceImpl {
         libraryDependencyMap.put("$http", getNewDependency("HttpClient", "@angular/common/http"));
         libraryDependencyMap.put("$location", getNewDependency("Location", "@angular/common"));
         libraryDependencyMap.put("$routeParams", getNewDependency("ActivatedRoute", "@angular/router"));
-        libraryDependencyMap.put("$window", getNewDependency("Window", "Dont Exist in Angular"));
+
+        libraryDependencyMap.put("$window", getNewDependency("Window", "Location, ActivatedRoute, or Router?"));
+        libraryDependencyMap.put("$q", getNewDependency("Promise", null));
+        libraryDependencyMap.put("$timeout", getNewDependency("setTimeout", "setTimeout directly"));
+
         //libraryDependencyMap.put("$filter", getNewDependency("$filter", "$filter")); -> used to be the way to access pipes
         // libraryDependencyMap.put("$scope"); TODO: convert $scope to Input/Output
-        // $q
         // $controller
-        // $timeout
         // $injector
         // $resource
-        // $upload
+        // $upload -> can now use httpClient, with form/multipart
 
         // NGX Bootstrap
         libraryDependencyMap.put("$uibModal", getNewDependency("BsModalService", "ngx-bootstrap/modal"));
