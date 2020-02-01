@@ -16,6 +16,16 @@ public class UpgradePathServiceImpl {
     public UpgradePathServiceImpl() {
         this.libraryDependencyMap = new HashMap<>();
         libraryDependencyMap.put("$http", getNewDependency("HttpClient", "@angular/common/http"));
+        libraryDependencyMap.put("$location", getNewDependency("Location", "@angular/common"));
+        libraryDependencyMap.put("$routeParams", getNewDependency("ActivatedRoute", "@angular/router"));
+        libraryDependencyMap.put("$window", getNewDependency("Window", "Dont Exist in Angular"));
+        //libraryDependencyMap.put("$filter", getNewDependency("$filter", "$filter")); -> used to be the way to access pipes
+        // libraryDependencyMap.put("$scope"); TODO: convert $scope to Input/Output
+
+        // NGX Bootstrap
+        libraryDependencyMap.put("$uibModal", getNewDependency("BsModalService", "ngx-bootstrap/modal"));
+        libraryDependencyMap.put("$uibModalInstance", getNewDependency("BsModalRef", "ngx-bootstrap/modal"));
+        libraryDependencyMap.put("toastrService", getNewDependency("ToastrService", "ngx-toastr")); // TODO: this is a custom service
     }
 
     public TsDependency getDependency(String jsName, AbstractTsClass tsClass) {

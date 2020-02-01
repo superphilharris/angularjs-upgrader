@@ -138,10 +138,23 @@ public class AngularJsParserVisitor
 //        return ctx;
 //    }
 
-//    @Override
-//    public Object visitMemberDotExpression(JavaScriptParser.MemberDotExpressionContext ctx) {
-//        return super.visitMemberDotExpression(ctx);
-//    }
+    @Override
+    public Object visitMemberDotExpression(JavaScriptParser.MemberDotExpressionContext ctx) {
+        if ("$inject".equals(ctx.getChild(2).getText()) && ctx.parent.getChildCount() >= 3) {
+            JsInjectStatement injectStatement = new JsInjectStatement();
+            injectStatement.functionName = ctx.getChild(0).getText();
+
+            if (ctx.parent.getChild(2).getChild(0).getChildCount() >= 3) { // parent for assign, getChild(2) for arrayLiteralExpression, getChild(0) for arrayLiteral
+                ParseTree arrayElements = ctx.parent.getChild(2).getChild(0).getChild(1);
+                for (int i = 0; i < arrayElements.getChildCount(); i += 2) { // +=2 for skipping commas in array
+                    injectStatement.injects.add(trimQuotes(arrayElements.getChild(i).getText()));
+                }
+            }
+            currentFile.injectStatements.add(injectStatement);
+            return ctx;
+        }
+        return super.visitMemberDotExpression(ctx);
+    }
 
 
 

@@ -108,6 +108,7 @@ public class AngularUpgraderServiceImpl {
             System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
         }
         tsClass.dependencies.addAll(jsInjectable.injections);
+        tsClass.dependencies.addAll(getInjects(jsInjectable.functionName, parentJsFile));
         tsClass.parent = parentTsModule;
         return tsClass;
     }
@@ -126,6 +127,16 @@ public class AngularUpgraderServiceImpl {
             if (foundFromAnonomous != null) return foundFromAnonomous;
         }
         return null;
+    }
+
+    private List<String> getInjects(String functionName, JsFile parentJsFile) {
+        if (functionName == null) return new LinkedList<>();
+
+        Optional<JsInjectStatement> jsInjectStatement = parentJsFile.injectStatements.stream()
+                .filter((statement) -> functionName.equals(statement.functionName))
+                .findFirst();
+        if (jsInjectStatement.isPresent()) return jsInjectStatement.get().injects;
+        return new LinkedList<>();
     }
 
     private TsService upgradeJsService(JsInjectable jsService, JsFile parentJsFile, TsModule parentTsModule) {
