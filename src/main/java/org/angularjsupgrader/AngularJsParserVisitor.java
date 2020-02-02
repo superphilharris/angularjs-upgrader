@@ -129,7 +129,16 @@ public class AngularJsParserVisitor
 
     @Override
     public Object visitAnoymousFunctionDecl(JavaScriptParser.AnoymousFunctionDeclContext ctx) {
-        return visitAndCreateFunction(null, ctx);
+        String functionName = null;
+        // Try to see if we have `functionName = function(){ ...}` syntax
+        if (ctx.parent != null && ctx.parent.parent instanceof JavaScriptParser.AssignmentExpressionContext) {
+            ParseTree identifiable = ctx.parent.parent.getChild(0);
+            while (identifiable.getChildCount() > 0) { // Loop through to get the last leaf on the tree
+                identifiable = identifiable.getChild(identifiable.getChildCount() - 1);
+            }
+            functionName = identifiable.getText();
+        }
+        return visitAndCreateFunction(functionName, ctx);
     }
 
 
