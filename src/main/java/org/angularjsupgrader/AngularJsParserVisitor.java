@@ -103,19 +103,30 @@ public class AngularJsParserVisitor
 
     @Override
     public Object visitStatement(JavaScriptParser.StatementContext ctx) {
-        if (ctx.getChildCount() != 1 || ctx.getChild(0) instanceof JavaScriptParser.FunctionDeclarationContext) {
+        if (currentFunction == null) {
+            return super.visitStatement(ctx);
+        }
+        // If we are a function, then let's not add the function declaration as a statement
+        RuleNode newCtx = getFirstDecendantWithMoreThan1Child(ctx); // We need this as statements are recursive
+        if (newCtx instanceof JavaScriptParser.FunctionDeclarationContext ||
+                newCtx instanceof JavaScriptParser.AssignmentExpressionContext && newCtx.getChild(newCtx.getChildCount() - 1) instanceof JavaScriptParser.FunctionExpressionContext) {
             return super.visitStatement(ctx);
         }
 
         JsStatement statement = new JsStatement();
         statement.type = JavaScriptParser.RULE_statement;
-        statement.originalText = ctx.getText();
-        if (currentFunction != null) {
-            currentFunction.statements.add(statement);
-        } else {
-//            System.err.println("The statement: '" + statement.originalText + "' is not part of any function");
-        }
+        statement.originalText = newCtx.getText();
+        currentFunction.statements.add(statement);
         return super.visitStatement(ctx);
+    }
+
+    private RuleNode getFirstDecendantWithMoreThan1Child(RuleNode ctx) {
+        if ((ctx.getChildCount() != 1 &&
+                !(ctx.getChildCount() == 2 && ctx.getChild(1) instanceof JavaScriptParser.EosContext)) ||
+                !(ctx.getChild(0) instanceof RuleNode)) {
+            return ctx;
+        }
+        return getFirstDecendantWithMoreThan1Child((RuleNode) ctx.getChild(0));
     }
 
     @Override
@@ -140,19 +151,6 @@ public class AngularJsParserVisitor
         }
         return visitAndCreateFunction(functionName, ctx);
     }
-
-
-//    @Override
-//    public Object visitNgInjectStatement(JavaScriptParser.NgInjectStatementContext ctx) {
-//        JsInjectStatement statement = new JsInjectStatement();
-//        statement.functionName = ctx.getChild(0).getText();
-//        ParseTree arrayLiteral = ctx.getChild(2);
-//        for (int i=0; i<arrayLiteral.getChildCount(); i++) {
-//            statement.injects.add(arrayLiteral.getChild(i).getText());
-//        }
-//        currentFile.injectStatements.add(statement);
-//        return ctx;
-//    }
 
     @Override
     public Object visitMemberDotExpression(JavaScriptParser.MemberDotExpressionContext ctx) {

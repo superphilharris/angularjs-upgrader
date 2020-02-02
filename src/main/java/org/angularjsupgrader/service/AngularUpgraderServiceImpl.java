@@ -83,17 +83,19 @@ public class AngularUpgraderServiceImpl {
         TsFunction tsFunction = new TsFunction();
         tsFunction.name = jsFunction.functionName;
         tsFunction.arguments = jsFunction.arguments;
-        for (JsStatement jsStatement : jsFunction.statements) {
-            TsStatement tsStatement = new TsStatement();
-            tsStatement.text = jsStatement.originalText; // TODO: swtich out old dependencies for new dependencies
-            tsFunction.statements.add(tsStatement);
-        }
+        tsFunction.statements.addAll(jsFunction.statements.stream().map(this::upgradeJsStatement).collect(Collectors.toList()));
 
         for (JsFunction childJsFunction : jsFunction.childFunctions) {
             tsFunction.childFunctions.add(upgradeJsFunction(childJsFunction));
         }
 
         return tsFunction;
+    }
+
+    private TsStatement upgradeJsStatement(JsStatement jsStatement) {
+        TsStatement tsStatement = new TsStatement();
+        tsStatement.text = jsStatement.originalText; // TODO: swtich out old dependencies for new dependencies
+        return tsStatement;
     }
 
     private TsRouting upgradeJsConfig(JsInjectable jsConfig, JsFile parentJsFile, TsModule tsModule) {
@@ -109,6 +111,7 @@ public class AngularUpgraderServiceImpl {
             for (JsFunction childJsFunction : jsFunction.childFunctions) {
                 tsClass.functions.add(upgradeJsFunction(childJsFunction));
             }
+            tsClass.initialization = jsFunction.statements.stream().map(this::upgradeJsStatement).collect(Collectors.toList());
         } else {
             System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
         }
@@ -123,7 +126,7 @@ public class AngularUpgraderServiceImpl {
                 .filter(childFunction -> functionName.equals(childFunction.functionName)).findFirst();
         if (jsFunction.isPresent()) return jsFunction.get();
 
-        // Search anonomous functions
+        // Search anonymous functions
         List<JsFunction> anonomousFunctions = parentJsFunctionWrapper.childFunctions.stream()
                 .filter(childFunction -> childFunction.functionName == null)
                 .collect(Collectors.toList());

@@ -96,7 +96,9 @@ public class TypeScriptFileGenerationServiceImpl {
         );
         // TODO: add in @Input() and @Output
         controllerLines.addAll(getConstructor(component));
-        controllerLines.add("\n\tngOnInit() {\n\n\t}\n");
+        controllerLines.add("\n\tngOnInit() {");
+        controllerLines.addAll(getStatementLines(component.initialization).stream().map(line -> "\t" + line).collect(Collectors.toList()));
+        controllerLines.add("\t}\n");
         // TODO: add in upgraded body
         controllerLines.addAll(getClassFunctionLines(component));
 
@@ -154,6 +156,11 @@ public class TypeScriptFileGenerationServiceImpl {
                 "})\n" +
                 "export class " + className + " {");
         serviceLines.addAll(getConstructor(service));
+        if (service.initialization.size() > 0) {
+            serviceLines.add("\tinit() {");
+            serviceLines.addAll(getStatementLines(service.initialization).stream().map(line -> "\t" + line).collect(Collectors.toList()));
+            serviceLines.add("\t}");
+        }
         serviceLines.addAll(getClassFunctionLines(service));
         serviceLines.add("}");
         writeFile(serviceLines, parentDirectory + service.name + ".service.ts");
@@ -196,17 +203,23 @@ public class TypeScriptFileGenerationServiceImpl {
     }
 
     private List<String> getFunctionLines(TsFunction function) {
+        if (function == null) return Collections.singletonList("");
+
         List<String> functionLines = new LinkedList<>();
         functionLines.add("");
         functionLines.add(function.name + "(" + String.join(", ", function.arguments) + ") {");
         for (TsFunction childFunction : function.childFunctions) {
             // TODO: embed anonymous functions inside of statements, rather than inside of other functions
             functionLines.addAll(getFunctionLines(childFunction).stream().map(line -> "\t" + line).collect(Collectors.toList()));
-//            functionLines.add("");
-//            functionLines.addAll(function.statements.stream().map(tsStatement -> "\t" + tsStatement.text).collect(Collectors.toList()));
+            functionLines.add("");
+            functionLines.addAll(getStatementLines(function.statements));
         }
         functionLines.add("}");
         return functionLines;
+    }
+
+    private List<String> getStatementLines(List<TsStatement> statements) {
+        return statements.stream().map(tsStatement -> "\t" + tsStatement.text).collect(Collectors.toList());
     }
 
     private List<String> getConstructor(AbstractTsClass tsClass) {
@@ -243,7 +256,7 @@ public class TypeScriptFileGenerationServiceImpl {
         try {
             Files.createDirectories(Paths.get(directory));
         } catch (IOException e) {
-
+            throw new UpgraderException(e);
         }
     }
 

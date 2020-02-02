@@ -11,6 +11,7 @@ public abstract class AbstractTsClass {
     public List<TsFunction> functions = new LinkedList<>();
     public List<String> dependencies = new LinkedList<>();
     public TsModule parent = null;
+    public List<TsStatement> initialization = new LinkedList<>();
 
     @Override
     public String toString() {
