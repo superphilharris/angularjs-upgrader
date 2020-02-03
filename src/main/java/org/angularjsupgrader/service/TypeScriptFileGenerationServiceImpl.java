@@ -47,7 +47,7 @@ public class TypeScriptFileGenerationServiceImpl {
         List<String> moduleLines = new LinkedList<>();
         moduleLines.add("import {NgModule} from '@angular/core';");
         for (TsComponent component : module.components) {
-            moduleLines.add("import {" + kebabToCamelUpperFirst(component.name) + "Component} from '" + component.name + "/" + component.name + ".component.ts';");
+            moduleLines.add("import {" + kebabToCamelUpperFirst(component.name) + "Component} from './" + component.name + "/" + component.name + ".component';");
         }
 
         moduleLines.add("\n// angularjs-upgrader generated from " + module.sourcedFrom);
@@ -56,7 +56,7 @@ public class TypeScriptFileGenerationServiceImpl {
 
         // Declarations
         List<String> componentDeclarations = module.components.stream().map(component -> {
-            return "\n\t\t" + kebabToCamelUpperFirst(component.name) + "Component";
+            return kebabToCamelUpperFirst(component.name) + "Component";
         }).collect(Collectors.toList());
         moduleLines.add("\tdeclarations: [\n\t\t" + String.join(",\n\t\t", componentDeclarations) + "\n\t]");
 
