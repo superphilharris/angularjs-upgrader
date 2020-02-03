@@ -164,7 +164,7 @@ public class AngularUpgraderServiceImpl {
     }
 
     private String convertToKebabCase(String camelCase) {
-        return camelCase; // TODO: this looks wrong
+        return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, camelCase);
     }
 
     private String removeDotJsFromEnd(String filenameWithDotJs) {
