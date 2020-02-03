@@ -99,7 +99,6 @@ public class TypeScriptFileGenerationServiceImpl {
         controllerLines.add("\n\tngOnInit() {");
         controllerLines.addAll(getStatementLines(component.initialization).stream().map(line -> "\t" + line).collect(Collectors.toList()));
         controllerLines.add("\t}\n");
-        // TODO: add in upgraded body
         controllerLines.addAll(getClassFunctionLines(component));
 
         controllerLines.add("}");
@@ -212,8 +211,8 @@ public class TypeScriptFileGenerationServiceImpl {
             // TODO: embed anonymous functions inside of statements, rather than inside of other functions
             functionLines.addAll(getFunctionLines(childFunction).stream().map(line -> "\t" + line).collect(Collectors.toList()));
             functionLines.add("");
-            functionLines.addAll(getStatementLines(function.statements));
         }
+        functionLines.addAll(getStatementLines(function.statements));
         functionLines.add("}");
         return functionLines;
     }
