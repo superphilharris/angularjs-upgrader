@@ -94,7 +94,7 @@ public class AngularUpgraderServiceImpl {
 
     private TsStatement upgradeJsStatement(JsStatement jsStatement) {
         TsStatement tsStatement = new TsStatement();
-        tsStatement.text = jsStatement.originalText; // TODO: swtich out old dependencies for new dependencies
+        tsStatement.text = jsStatement.toString(); // TODO: swtich out old dependencies for new dependencies
         return tsStatement;
     }
 

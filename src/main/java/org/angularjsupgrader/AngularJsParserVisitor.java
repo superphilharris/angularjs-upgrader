@@ -6,6 +6,7 @@ import org.angularjsupgrader.parser.JavaScriptParserBaseVisitor;
 import org.angularjsupgrader.parser.JavaScriptParserVisitor;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.RuleNode;
+import org.antlr.v4.runtime.tree.TerminalNode;
 
 
 /**
@@ -18,6 +19,7 @@ public class AngularJsParserVisitor
     private final JsProgram program;
     private JsFile currentFile;
     private JsFunction currentFunction = null;
+    private JsStatementBranch currentStatementBranch = null;
 
     public AngularJsParserVisitor() {
         this.program = new JsProgram();
@@ -53,6 +55,30 @@ public class AngularJsParserVisitor
         }
 
         return ctx;
+    }
+
+    private void visitAndCreateStatement(RuleNode ruleNode) {
+        JsStatementBranch newBranch = new JsStatementBranch();
+        currentStatementBranch.subParts.add(newBranch);
+        newBranch.parent = currentStatementBranch;
+        currentStatementBranch = newBranch;
+        for (int i = 0; i < ruleNode.getChildCount(); i++) {
+            if (ruleNode.getChild(i) instanceof TerminalNode) {
+                visitLeaf((TerminalNode) ruleNode.getChild(i));
+            } else if (ruleNode.getChild(i) instanceof RuleNode) {
+                visitAndCreateStatement((RuleNode) ruleNode.getChild(i));
+            } else {
+                System.out.println(ruleNode.getChild(i) + " : " + ruleNode.getChild(i).getText());
+            }
+        }
+        currentStatementBranch = newBranch.parent;
+    }
+
+    private void visitLeaf(TerminalNode terminalNode) {
+        JsStatementLeaf newLeaf = new JsStatementLeaf();
+        currentStatementBranch.subParts.add(newLeaf);
+        newLeaf.text = terminalNode.getText();
+        newLeaf.parent = currentStatementBranch;
     }
 
     private void visitNgComponentInjectableDeclaration(JavaScriptParser.NgComponentInjectableDeclarationContext ctx, JsModule module) {
@@ -101,6 +127,7 @@ public class AngularJsParserVisitor
         visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1));
     }
 
+    // TODO: rather than calling super.visitStatement(), we should really be calling a private method
     @Override
     public Object visitStatement(JavaScriptParser.StatementContext ctx) {
         if (currentFunction == null) {
@@ -113,11 +140,16 @@ public class AngularJsParserVisitor
             return super.visitStatement(ctx);
         }
 
+
         JsStatement statement = new JsStatement();
         statement.type = JavaScriptParser.RULE_statement;
         statement.originalText = newCtx.getText();
         currentFunction.statements.add(statement);
-        return super.visitStatement(ctx);
+        currentStatementBranch = statement;
+        visitAndCreateStatement(ctx);
+        Object result = super.visitStatement(ctx);
+        currentStatementBranch = null;
+        return result;
     }
 
     private RuleNode getFirstDecendantWithMoreThan1Child(RuleNode ctx) {
@@ -169,7 +201,6 @@ public class AngularJsParserVisitor
         }
         return super.visitMemberDotExpression(ctx);
     }
-
 
 
     private Object visitAndCreateFunction(String functionName, ParseTree ctx) {
