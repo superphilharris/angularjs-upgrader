@@ -63,7 +63,16 @@ public class AngularJsParserVisitor
             if (ruleNode.getChild(i) instanceof TerminalNode) {
                 newBranch.subParts.add(visitLeaf((TerminalNode) ruleNode.getChild(i)));
             } else if (ruleNode.getChild(i) instanceof RuleNode) {
-                newBranch.subParts.add(visitAndCreateStatement((RuleNode) ruleNode.getChild(i)));
+                // Do not want to visit named functions, as they will be visited by default parser
+
+                // If we are a function, then let's not add the function declaration as a statement
+                RuleNode newCtx = getFirstDecendantWithMoreThan1Child(ruleNode);
+                boolean isFunctionDeclaration = newCtx instanceof JavaScriptParser.FunctionDeclarationContext ||
+                        newCtx instanceof JavaScriptParser.AssignmentExpressionContext && newCtx.getChild(newCtx.getChildCount() - 1) instanceof JavaScriptParser.FunctionExpressionContext;
+
+                if (!isFunctionDeclaration) { // TODO: am thinking that we should still assign the memberdot expression here
+                    newBranch.subParts.add(visitAndCreateStatement((RuleNode) ruleNode.getChild(i)));
+                }
             } else {
                 System.out.println(ruleNode.getChild(i) + " : " + ruleNode.getChild(i).getText());
             }
@@ -121,22 +130,6 @@ public class AngularJsParserVisitor
         }
         module.injectables.add(injectable);
         visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1));
-    }
-
-    // TODO: rather than calling super.visitStatement(), we should really be calling a private method
-    @Override
-    public Object visitStatement(JavaScriptParser.StatementContext ctx) {
-        if (currentFunction == null) {
-            return super.visitStatement(ctx);
-        }
-        // If we are a function, then let's not add the function declaration as a statement
-        RuleNode newCtx = getFirstDecendantWithMoreThan1Child(ctx); // We need this as statements are recursive
-        if (newCtx instanceof JavaScriptParser.FunctionDeclarationContext ||
-                newCtx instanceof JavaScriptParser.AssignmentExpressionContext && newCtx.getChild(newCtx.getChildCount() - 1) instanceof JavaScriptParser.FunctionExpressionContext) {
-            return super.visitStatement(ctx);
-        }
-
-        return super.visitStatement(ctx);
     }
 
     private RuleNode getFirstDecendantWithMoreThan1Child(RuleNode ctx) {
