@@ -92,7 +92,7 @@ public class AngularUpgraderServiceImpl {
         return tsFunction;
     }
 
-    private TsStatement upgradeJsStatement(JsStatement jsStatement) {
+    private TsStatement upgradeJsStatement(JsStatementBranch jsStatement) {
         TsStatement tsStatement = new TsStatement();
         tsStatement.text = jsStatement.toString(); // TODO: swtich out old dependencies for new dependencies
         return tsStatement;

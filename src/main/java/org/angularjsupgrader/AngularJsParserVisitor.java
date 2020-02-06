@@ -57,28 +57,24 @@ public class AngularJsParserVisitor
         return ctx;
     }
 
-    private void visitAndCreateStatement(RuleNode ruleNode) {
+    private JsStatementBranch visitAndCreateStatement(RuleNode ruleNode) {
         JsStatementBranch newBranch = new JsStatementBranch();
-        currentStatementBranch.subParts.add(newBranch);
-        newBranch.parent = currentStatementBranch;
-        currentStatementBranch = newBranch;
         for (int i = 0; i < ruleNode.getChildCount(); i++) {
             if (ruleNode.getChild(i) instanceof TerminalNode) {
-                visitLeaf((TerminalNode) ruleNode.getChild(i));
+                newBranch.subParts.add(visitLeaf((TerminalNode) ruleNode.getChild(i)));
             } else if (ruleNode.getChild(i) instanceof RuleNode) {
-                visitAndCreateStatement((RuleNode) ruleNode.getChild(i));
+                newBranch.subParts.add(visitAndCreateStatement((RuleNode) ruleNode.getChild(i)));
             } else {
                 System.out.println(ruleNode.getChild(i) + " : " + ruleNode.getChild(i).getText());
             }
         }
-        currentStatementBranch = newBranch.parent;
+        return newBranch;
     }
 
-    private void visitLeaf(TerminalNode terminalNode) {
+    private JsStatementLeaf visitLeaf(TerminalNode terminalNode) {
         JsStatementLeaf newLeaf = new JsStatementLeaf();
-        currentStatementBranch.subParts.add(newLeaf);
         newLeaf.text = terminalNode.getText();
-        newLeaf.parent = currentStatementBranch;
+        return newLeaf;
     }
 
     private void visitNgComponentInjectableDeclaration(JavaScriptParser.NgComponentInjectableDeclarationContext ctx, JsModule module) {
@@ -140,16 +136,7 @@ public class AngularJsParserVisitor
             return super.visitStatement(ctx);
         }
 
-
-        JsStatement statement = new JsStatement();
-        statement.type = JavaScriptParser.RULE_statement;
-        statement.originalText = newCtx.getText();
-        currentFunction.statements.add(statement);
-        currentStatementBranch = statement;
-        visitAndCreateStatement(ctx);
-        Object result = super.visitStatement(ctx);
-        currentStatementBranch = null;
-        return result;
+        return super.visitStatement(ctx);
     }
 
     private RuleNode getFirstDecendantWithMoreThan1Child(RuleNode ctx) {
@@ -207,16 +194,6 @@ public class AngularJsParserVisitor
         JsFunction function = new JsFunction();
         function.functionName = functionName;
 
-        for (int i = 0; i < ctx.getChildCount(); i++) {
-            ParseTree child = ctx.getChild(i);
-            if (child instanceof JavaScriptParser.FormalParameterListContext) {
-                for (int j = 0; j < child.getChildCount(); j += 2) { // += 2 to skip commas
-                    function.arguments.add(child.getChild(j).getText());
-                }
-                break;
-            }
-        }
-
         // Add the function to it's parent list
         if (currentFunction != null) {
             currentFunction.childFunctions.add(function);
@@ -225,6 +202,23 @@ public class AngularJsParserVisitor
         }
         function.parent = currentFunction;
         currentFunction = function;
+
+        for (int i = 0; i < ctx.getChildCount(); i++) {
+            ParseTree child = ctx.getChild(i);
+            if (child instanceof JavaScriptParser.FormalParameterListContext) {
+                for (int j = 0; j < child.getChildCount(); j += 2) { // += 2 to skip commas
+                    function.arguments.add(child.getChild(j).getText());
+                }
+            }
+            if (child instanceof JavaScriptParser.FunctionBodyContext && child.getChildCount() == 1) {
+
+                ParseTree sourceElements = child.getChild(0);
+                for (int j = 0; j < sourceElements.getChildCount(); j++) {
+                    currentFunction.statements.add(visitAndCreateStatement((RuleNode) sourceElements.getChild(j)));
+                }
+            }
+        }
+
         Object result = super.visitChildren((RuleNode) ctx);
         currentFunction = function.parent;
         return result;
