@@ -63,14 +63,10 @@ public class AngularJsParserVisitor
             if (ruleNode.getChild(i) instanceof TerminalNode) {
                 newBranch.subParts.add(visitLeaf((TerminalNode) ruleNode.getChild(i)));
             } else if (ruleNode.getChild(i) instanceof RuleNode) {
-                // Do not want to visit named functions, as they will be visited by default parser
+                // If we are a named function, then let's not add the function declaration as a statement
+                RuleNode possibleFunction = getFirstDecendantWithMoreThan1Child(ruleNode);
 
-                // If we are a function, then let's not add the function declaration as a statement
-                RuleNode newCtx = getFirstDecendantWithMoreThan1Child(ruleNode);
-                boolean isFunctionDeclaration = newCtx instanceof JavaScriptParser.FunctionDeclarationContext ||
-                        newCtx instanceof JavaScriptParser.AssignmentExpressionContext && newCtx.getChild(newCtx.getChildCount() - 1) instanceof JavaScriptParser.FunctionExpressionContext;
-
-                if (!isFunctionDeclaration) { // TODO: am thinking that we should still assign the memberdot expression here
+                if (!isNamedFunction(possibleFunction)) { // TODO: And is not a variable statement where all children are named functions
                     newBranch.subParts.add(visitAndCreateStatement((RuleNode) ruleNode.getChild(i)));
                 }
             } else {
@@ -78,6 +74,13 @@ public class AngularJsParserVisitor
             }
         }
         return newBranch;
+    }
+
+    private boolean isNamedFunction(RuleNode ruleNode) {
+        return ruleNode instanceof JavaScriptParser.FunctionDeclarationContext ||
+                ((ruleNode instanceof JavaScriptParser.AssignmentExpressionContext ||
+                        ruleNode instanceof JavaScriptParser.VariableDeclarationContext) &&
+                        ruleNode.getChild(ruleNode.getChildCount() - 1) instanceof JavaScriptParser.FunctionExpressionContext);
     }
 
     private JsStatementLeaf visitLeaf(TerminalNode terminalNode) {
@@ -152,16 +155,15 @@ public class AngularJsParserVisitor
 
     @Override
     public Object visitAnoymousFunctionDecl(JavaScriptParser.AnoymousFunctionDeclContext ctx) {
-        String functionName = null;
         // Try to see if we have `functionName = function(){ ...}` syntax
-        if (ctx.parent != null && ctx.parent.parent instanceof JavaScriptParser.AssignmentExpressionContext) {
+        if (ctx.parent != null && isNamedFunction(ctx.parent.parent)) {
             ParseTree identifiable = ctx.parent.parent.getChild(0);
             while (identifiable.getChildCount() > 0) { // Loop through to get the last leaf on the tree
                 identifiable = identifiable.getChild(identifiable.getChildCount() - 1);
             }
-            functionName = identifiable.getText();
+            return visitAndCreateFunction(identifiable.getText(), ctx);
         }
-        return visitAndCreateFunction(functionName, ctx);
+        return super.visitAnoymousFunctionDecl(ctx);
     }
 
     @Override
