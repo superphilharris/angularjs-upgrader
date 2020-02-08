@@ -9,7 +9,6 @@ import java.util.stream.Collectors;
  * Created by Philip Harris on 3/02/2020
  */
 public class JsStatementBranch extends AbstractJsStatementPart {
-    public int type;
     public List<AbstractJsStatementPart> subParts = new LinkedList<>();
 
     @Override

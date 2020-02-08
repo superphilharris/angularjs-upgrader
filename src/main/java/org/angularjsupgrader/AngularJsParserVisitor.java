@@ -59,6 +59,7 @@ public class AngularJsParserVisitor
 
     private JsStatementBranch visitAndCreateStatement(RuleNode ruleNode) {
         JsStatementBranch newBranch = new JsStatementBranch();
+        newBranch.type = ruleNode.getClass();
         for (int i = 0; i < ruleNode.getChildCount(); i++) {
             if (ruleNode.getChild(i) instanceof TerminalNode) {
                 newBranch.subParts.add(visitLeaf((TerminalNode) ruleNode.getChild(i)));
@@ -86,6 +87,7 @@ public class AngularJsParserVisitor
     private JsStatementLeaf visitLeaf(TerminalNode terminalNode) {
         JsStatementLeaf newLeaf = new JsStatementLeaf();
         newLeaf.text = terminalNode.getText();
+        newLeaf.type = terminalNode.getClass();
         return newLeaf;
     }
 
