@@ -196,6 +196,7 @@ public class TypeScriptFileGenerationServiceImpl {
     private List<String> getClassFunctionLines(AbstractTsClass tsClass) {
         List<String> classFunctionLines = new LinkedList<>();
         for (TsFunction function : tsClass.functions) {
+            classFunctionLines.add("");
             classFunctionLines.addAll(getFunctionLines(function).stream().map(line -> "\t" + line).collect(Collectors.toList()));
         }
         return classFunctionLines;
@@ -205,12 +206,11 @@ public class TypeScriptFileGenerationServiceImpl {
         if (function == null) return Collections.singletonList("");
 
         List<String> functionLines = new LinkedList<>();
-        functionLines.add("");
         functionLines.add(function.name + "(" + String.join(", ", function.arguments) + ") {");
         for (TsFunction childFunction : function.childFunctions) {
             List<String> childFunctionLines = getFunctionLines(childFunction);
-            functionLines.add("\tfunction " + childFunctionLines.get(1)); // Only inner children have the `function` prefix
-            functionLines.addAll(childFunctionLines.subList(2, childFunctionLines.size()).stream().map(line -> "\t" + line).collect(Collectors.toList()));
+            functionLines.add("\tfunction " + childFunctionLines.get(0)); // Only inner children have the `function` prefix
+            functionLines.addAll(childFunctionLines.subList(1, childFunctionLines.size()).stream().map(line -> "\t" + line).collect(Collectors.toList()));
             functionLines.add("");
         }
         functionLines.addAll(getStatementLines(function.statements));
