@@ -208,8 +208,9 @@ public class TypeScriptFileGenerationServiceImpl {
         functionLines.add("");
         functionLines.add(function.name + "(" + String.join(", ", function.arguments) + ") {");
         for (TsFunction childFunction : function.childFunctions) {
-            // TODO: embed anonymous functions inside of statements, rather than inside of other functions
-            functionLines.addAll(getFunctionLines(childFunction).stream().map(line -> "\t" + line).collect(Collectors.toList()));
+            List<String> childFunctionLines = getFunctionLines(childFunction);
+            functionLines.add("\tfunction " + childFunctionLines.get(1)); // Only inner children have the `function` prefix
+            functionLines.addAll(childFunctionLines.subList(2, childFunctionLines.size()).stream().map(line -> "\t" + line).collect(Collectors.toList()));
             functionLines.add("");
         }
         functionLines.addAll(getStatementLines(function.statements));
