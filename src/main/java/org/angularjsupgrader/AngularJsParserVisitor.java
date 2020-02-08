@@ -126,13 +126,17 @@ public class AngularJsParserVisitor
         injectable.type = InjectableType.getByIdentifier(ngType);
         injectable.injectableName = trimQuotes(stringLiteral);
         injectable.functionName = injectable.injectableName;
-        for (int i = 0; i < arrayElementsList.getChildCount() - 2; i++) { // The last one should be the function definition
-            if (arrayElementsList.getChild(i) instanceof JavaScriptParser.ArrayElementContext) {
+        for (int i = 0; i < arrayElementsList.getChildCount(); i++) {
+            ParseTree arrayElement = arrayElementsList.getChild(i);
+            if (arrayElement instanceof JavaScriptParser.ArrayElementContext && !
+                    (i == arrayElementsList.getChildCount() - 1 && arrayElement.getChild(0) instanceof JavaScriptParser.FunctionExpressionContext)) {
                 injectable.injections.add(trimQuotes(arrayElementsList.getChild(i).getText()));
             }
         }
         module.injectables.add(injectable);
-        visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0).getChild(0));
+        if (arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0) instanceof JavaScriptParser.FunctionExpressionContext) {
+            visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0).getChild(0));
+        }
     }
 
     private RuleNode getFirstDecendantWithMoreThan1Child(RuleNode ctx) {
