@@ -51,6 +51,9 @@ public class AngularJsParserVisitor
             if (ctx.getChild(i) instanceof JavaScriptParser.NgInlineComponentDeclarationContext) {
                 visitNgInlineComponentDeclaration((JavaScriptParser.NgInlineComponentDeclarationContext) ctx.getChild(i), module);
             }
+            if (ctx.getChild(i) instanceof JavaScriptParser.NgComponentWithInjectionsDeclarationContext) { // TODO: parse this one
+                visitNgComponentWithInjectionsDeclaration((JavaScriptParser.NgComponentWithInjectionsDeclarationContext) ctx.getChild(i));
+            }
             // TODO: add in the other types
         }
 

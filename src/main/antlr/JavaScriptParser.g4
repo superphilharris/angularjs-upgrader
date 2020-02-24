@@ -46,20 +46,17 @@ program
 ngModuleDeclaration
     : NgModuleSelector OpenParen StringLiteral (Comma arrayLiteral)? CloseParen
       ngModuleDeclarationInjectable+
-      SemiColon?
+      eos
     ;
 
 ngModuleDeclarationInjectable
-    : (Dot assignable OpenParen arrayLiteral CloseParen)                            # NgComponentWithInjectionsDeclaration
-    | (Dot assignable OpenParen assignable CloseParen)                              # NgComponentInjectableDeclaration
-    | (Dot assignable OpenParen StringLiteral Comma arrayLiteral CloseParen)        # NgInlineComponentDeclaration
-    | (Dot assignable OpenParen StringLiteral Comma assignable CloseParen)          # NgNamedComponentDeclaration
-    | (Dot assignable OpenParen StringLiteral Comma anoymousFunction CloseParen)    # NgComponentAnonymousDeclaration
+    : (Dot Identifier OpenParen arrayLiteral CloseParen)                            # NgComponentWithInjectionsDeclaration
+    | (Dot Identifier OpenParen Identifier CloseParen)                              # NgComponentInjectableDeclaration
+    | (Dot Identifier OpenParen StringLiteral Comma arrayLiteral CloseParen)        # NgInlineComponentDeclaration
+    | (Dot Identifier OpenParen StringLiteral Comma Identifier CloseParen)          # NgNamedComponentDeclaration
+    | (Dot Identifier OpenParen StringLiteral Comma anoymousFunction CloseParen)    # NgComponentAnonymousDeclaration
     ;
 
-//ngInjectStatement
-//    : NgInject '=' arrayLiteral SemiColon?
-//    ;
 
 // Everything below is custom
 

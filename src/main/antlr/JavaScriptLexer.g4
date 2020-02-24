@@ -38,7 +38,10 @@ options { superClass='org.angularjsupgrader.parser.JavaScriptBaseLexer'; }
 package org.angularjsupgrader.parser;
 }
 
+
+
 NgModuleSelector:               'angular.module';
+//NgRouterListStart:                  'routeProvider.when';
 //NgInject:                       Identifier '.$inject';
 
 // Normal JS Below this line:
@@ -190,7 +193,8 @@ Yield:                          'yield' {this.IsStrictMode()}?;
 
 /// Identifier Names and Identifiers
 
-Identifier:                     IdentifierStart IdentifierPart*;
+Identifier:                     (IdentifierStart IdentifierPart*);
+
 /// String Literals
 StringLiteral:                 ('"' DoubleStringCharacter* '"'
              |                  '\'' SingleStringCharacter* '\'') {this.ProcessStringLiteral();}
