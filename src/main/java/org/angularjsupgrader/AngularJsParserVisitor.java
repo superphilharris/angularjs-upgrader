@@ -52,7 +52,7 @@ public class AngularJsParserVisitor
                 visitNgInlineComponentDeclaration((JavaScriptParser.NgInlineComponentDeclarationContext) ctx.getChild(i), module);
             }
             if (ctx.getChild(i) instanceof JavaScriptParser.NgComponentWithInjectionsDeclarationContext) { // TODO: parse this one
-                visitNgComponentWithInjectionsDeclaration((JavaScriptParser.NgComponentWithInjectionsDeclarationContext) ctx.getChild(i));
+                visitNgComponentWithInjectionsDeclaration((JavaScriptParser.NgComponentWithInjectionsDeclarationContext) ctx.getChild(i), module);
             }
             // TODO: add in the other types
         }
@@ -130,17 +130,44 @@ public class AngularJsParserVisitor
         final JsInjectable injectable = new JsInjectable();
         injectable.type = InjectableType.getByIdentifier(ngType);
         injectable.injectableName = trimQuotes(stringLiteral);
-        injectable.functionName = injectable.injectableName;
         for (int i = 0; i < arrayElementsList.getChildCount(); i++) {
             ParseTree arrayElement = arrayElementsList.getChild(i);
-            if (arrayElement instanceof JavaScriptParser.ArrayElementContext && !
-                    (i == arrayElementsList.getChildCount() - 1 && arrayElement.getChild(0) instanceof JavaScriptParser.FunctionExpressionContext)) {
+            if (arrayElement instanceof JavaScriptParser.ArrayElementContext &&
+                    (arrayElement.getChild(0) instanceof JavaScriptParser.LiteralExpressionContext)) {
                 injectable.injections.add(trimQuotes(arrayElementsList.getChild(i).getText()));
             }
         }
         module.injectables.add(injectable);
-        if (arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0) instanceof JavaScriptParser.FunctionExpressionContext) {
-            visitAndCreateFunction(injectable.injectableName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0).getChild(0));
+
+        ParseTree lastListElement = arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0);
+        if (lastListElement instanceof JavaScriptParser.FunctionExpressionContext) {
+            injectable.functionName = injectable.injectableName;
+            visitAndCreateFunction(injectable.functionName, lastListElement.getChild(0));
+        } else {
+            injectable.functionName = trimQuotes(lastListElement.getText());
+        }
+    }
+
+    private void visitNgComponentWithInjectionsDeclaration(JavaScriptParser.NgComponentWithInjectionsDeclarationContext ctx, JsModule module) {
+        if (ctx.getChild(1).getText().equals("config")) {
+            JsInjectable injectable = new JsInjectable();
+            injectable.type = InjectableType.CONFIG;
+            injectable.functionName = module.name + " config"; // This is kinda hacky, but we use it to resolve our function definition later
+
+            ParseTree arrayElementsList = ctx.getChild(3).getChild(1);
+            for (int i = 0; i < arrayElementsList.getChildCount(); i++) {
+                ParseTree arrayElement = arrayElementsList.getChild(i);
+                if (arrayElement instanceof JavaScriptParser.ArrayElementContext && !
+                        (i == arrayElementsList.getChildCount() - 1 && arrayElement.getChild(0) instanceof JavaScriptParser.FunctionExpressionContext)) {
+                    injectable.injections.add(trimQuotes(arrayElementsList.getChild(i).getText()));
+                }
+            }
+            module.injectables.add(injectable);
+            if (arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0) instanceof JavaScriptParser.FunctionExpressionContext) {
+                visitAndCreateFunction(injectable.functionName, arrayElementsList.getChild(arrayElementsList.getChildCount() - 1).getChild(0).getChild(0));
+            }
+        } else {
+            System.err.println("The statement is not config for " + ctx.getText());
         }
     }
 
