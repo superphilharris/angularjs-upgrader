@@ -94,16 +94,14 @@ public class AngularUpgraderServiceImpl {
 
     private TsStatement upgradeJsStatement(JsStatementBranch jsStatement) {
         TsStatement tsStatement = new TsStatement();
-        tsStatement.text = jsStatement.toString(); // TODO: swtich out old dependencies for new dependencies
+        tsStatement.text = jsStatement.toString(); // TODO: switch out old dependencies for new dependencies
         return tsStatement;
     }
 
     private TsRouting upgradeJsConfig(JsInjectable jsConfig, JsFile parentJsFile, TsModule tsModule) {
-        JsFunction jsFunction = getJsFunction(parentJsFile, jsConfig.functionName);
-
-        return tsModule.routing;
+        // TODO: extract out our paths from our upgraded component
+        return upgradeJsInjectable(jsConfig, parentJsFile, new TsRouting(), tsModule);
     }
-
 
     private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass, TsModule parentTsModule) {
         JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);

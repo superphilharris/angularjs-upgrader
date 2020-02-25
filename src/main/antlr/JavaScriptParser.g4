@@ -54,9 +54,11 @@ ngModuleDeclarationInjectable
     | (Dot Identifier OpenParen Identifier CloseParen)                              # NgComponentInjectableDeclaration
     | (Dot Identifier OpenParen StringLiteral Comma arrayLiteral CloseParen)        # NgInlineComponentDeclaration
     | (Dot Identifier OpenParen StringLiteral Comma Identifier CloseParen)          # NgNamedComponentDeclaration
-    | (Dot Identifier OpenParen StringLiteral Comma anoymousFunction CloseParen)    # NgComponentAnonymousDeclaration
+//    | (Dot Identifier OpenParen StringLiteral Comma anoymousFunction CloseParen)    # NgComponentAnonymousDeclaration
     ;
 
+//ngInjectStatement:
+//    Identifier NgInject '=' arrayLiteral;
 
 // Everything below is custom
 

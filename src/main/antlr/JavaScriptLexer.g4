@@ -41,8 +41,7 @@ package org.angularjsupgrader.parser;
 
 
 NgModuleSelector:               'angular.module';
-//NgRouterListStart:                  'routeProvider.when';
-//NgInject:                       Identifier '.$inject';
+//NgInject:                       '.$inject';
 
 // Normal JS Below this line:
 
