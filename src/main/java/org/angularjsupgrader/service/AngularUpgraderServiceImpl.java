@@ -56,7 +56,11 @@ public class AngularUpgraderServiceImpl {
         tsModule.sourcedFrom = jsModule.sourcedFrom;
         tsModule.parent = parentTsModule;
 
+        for (JsInjectable jsDirective : getType(jsModule, InjectableType.DIRECTIVE)) {
+//            tsModule.components.add(upgradeJsDirective(jsDirective, parentJsFile, tsModule));
+        }
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
+            // TODO: we need to move this upgrading into our #upgradeJsDirective function
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
         }
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
@@ -73,6 +77,12 @@ public class AngularUpgraderServiceImpl {
         return tsModule;
     }
 
+    private TsComponent upgradeJsDirective(JsInjectable jsDirective, JsFile parentJsFile, TsModule parentTsModule) {
+        TsComponent tsComponent = new TsComponent();
+
+        tsComponent = upgradeJsInjectable(jsDirective, parentJsFile, tsComponent, parentTsModule);
+        return tsComponent;
+    }
 
     private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile, TsModule parentTsModule) {
         TsComponent tsComponent = new TsComponent();
@@ -113,7 +123,7 @@ public class AngularUpgraderServiceImpl {
             for (JsFunction childJsFunction : jsFunction.childFunctions) {
                 tsClass.functions.add(upgradeJsFunction(childJsFunction));
             }
-            tsClass.initialization = jsFunction.statements.stream().map(this::upgradeJsStatement).collect(Collectors.toList());
+            tsClass.initialization.addAll(jsFunction.statements.stream().map(this::upgradeJsStatement).collect(Collectors.toList()));
         } else {
             System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
         }
