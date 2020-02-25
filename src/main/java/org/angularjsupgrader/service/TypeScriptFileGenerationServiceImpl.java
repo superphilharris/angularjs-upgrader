@@ -42,6 +42,9 @@ public class TypeScriptFileGenerationServiceImpl {
         for (TsService service : module.services) {
             generateService(service, directory);
         }
+        for (TsRouting routing : module.routings) {
+            generateRouting(routing, directory);
+        }
 
         // Imports
         List<String> moduleLines = new LinkedList<>();
@@ -192,6 +195,26 @@ public class TypeScriptFileGenerationServiceImpl {
         writeFile(testLines, parentDirectory + service.name + ".service.spec.ts");
     }
 
+    private void generateRouting(TsRouting routing, String parentDirectory) throws UpgraderException {
+        List<String> classLines = new LinkedList<>();
+        classLines.add("import {NgModule} from '@angular/core';\n" +
+                "import {RouterModule, Routes} from '@angular/router';\n\n" +
+                "const routes: Routes = [{\n" +
+                "}];\n\n" +
+                "@NgModule({\n" +
+                "  imports: [\n" +
+                "    RouterModule.forChild(routes)\n" +
+                "  ],\n" +
+                "  exports: [\n" +
+                "    RouterModule\n" +
+                "  ]\n" +
+                "})\n" +
+                "export class " + kebabToCamelUpperFirst(routing.name) + "RoutingModule {\n" +
+                "\n" +
+                "}");
+
+        writeFile(classLines, parentDirectory + routing.name + "-routing.module.ts");
+    }
 
     private List<String> getClassFunctionLines(AbstractTsClass tsClass) {
         List<String> classFunctionLines = new LinkedList<>();

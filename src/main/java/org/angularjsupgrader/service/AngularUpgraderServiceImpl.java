@@ -65,8 +65,9 @@ public class AngularUpgraderServiceImpl {
         for (JsInjectable jsFactory : getType(jsModule, InjectableType.FACTORY)) {
             tsModule.services.add(upgradeJsService(jsFactory, parentJsFile, tsModule));
         }
-        for (JsInjectable jsConfig : getType(jsModule, InjectableType.CONFIG)) {
-            tsModule.routing = upgradeJsConfig(jsConfig, parentJsFile, tsModule);
+        List<JsInjectable> jsConfigs = getType(jsModule, InjectableType.CONFIG);
+        for (int i = 0; i < jsConfigs.size(); i++) {
+            tsModule.routings.add(upgradeJsConfig(jsConfigs.get(i), parentJsFile, tsModule, i));
         }
 
         return tsModule;
@@ -98,9 +99,12 @@ public class AngularUpgraderServiceImpl {
         return tsStatement;
     }
 
-    private TsRouting upgradeJsConfig(JsInjectable jsConfig, JsFile parentJsFile, TsModule tsModule) {
+    private TsRouting upgradeJsConfig(JsInjectable jsConfig, JsFile parentJsFile, TsModule tsModule, int sequenceOfConfig) {
         // TODO: extract out our paths from our upgraded component
-        return upgradeJsInjectable(jsConfig, parentJsFile, new TsRouting(), tsModule);
+        TsRouting tsRouting = new TsRouting();
+        tsRouting.name = tsModule.name + (sequenceOfConfig == 0 ? "" : 1 + sequenceOfConfig);
+        tsRouting.sourcedFrom = jsConfig.functionName + " in " + parentJsFile.filename;
+        return upgradeJsInjectable(jsConfig, parentJsFile, tsRouting, tsModule);
     }
 
     private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass, TsModule parentTsModule) {

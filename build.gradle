@@ -20,6 +20,11 @@ task copyBaseClasses(type: Copy) {
     into 'build/generated-src/antlr/main/'
 }
 
+task copyGeneratedSource(type: Copy) {
+    from 'build/generated-src/antlr/main'
+    into 'src/main/java/org/angularjsupgrader/parser'
+}
+
 /*
 I tried to get it working with packages.
 But am having problems where you cannot define the package in JavaScriptParser.g4 > options > tokenVocab
