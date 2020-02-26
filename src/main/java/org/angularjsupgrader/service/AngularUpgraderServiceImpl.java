@@ -5,9 +5,7 @@ import org.angularjsupgrader.model.angularjs.*;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.parser.JavaScriptParser;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -57,9 +55,10 @@ public class AngularUpgraderServiceImpl {
         tsModule.sourcedFrom = jsModule.sourcedFrom;
         tsModule.parent = parentTsModule;
 
-        for (JsInjectable jsDirective : getType(jsModule, InjectableType.DIRECTIVE)) {
-//            tsModule.components.add(upgradeJsDirective(jsDirective, parentJsFile, tsModule));
-        }
+        List<JsDirective> jsDirectives = getType(jsModule, InjectableType.DIRECTIVE).stream()
+                .map(jsInjectable -> extractJsDirective(jsInjectable.functionName, parentJsFile))
+                .collect(Collectors.toList());
+
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
             // TODO: we need to move this upgrading into our #upgradeJsDirective function
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
@@ -76,18 +75,6 @@ public class AngularUpgraderServiceImpl {
         }
 
         return tsModule;
-    }
-
-    private TsComponent upgradeJsDirective(JsInjectable jsDirective, JsFile parentJsFile, TsModule parentTsModule) {
-        TsComponent tsComponent = new TsComponent();
-        tsComponent.name = camelToKebab(jsDirective.injectableName);
-        tsComponent = upgradeJsInjectable(jsDirective, parentJsFile, tsComponent, parentTsModule);
-
-        JsDirective extractedDirective = extractJsDirective(jsDirective.functionName, parentJsFile);
-        if (extractedDirective != null) {
-            System.out.println(extractedDirective);
-        }
-        return tsComponent;
     }
 
     private JsDirective extractJsDirective(String directiveFunctionName, JsFile parentJsFile) {
@@ -140,8 +127,13 @@ public class AngularUpgraderServiceImpl {
                         jsDirective.restrictType = RestrictType.getByCode(propertyValue.toString());
                         break;
                     case "scope":
-                    case "link":
+                        jsDirective.inputOutpus = extractScope(propertyValue);
+                        break;
                     case "bindToController":
+                        jsDirective.bindToController = Boolean.valueOf(propertyValue.toString());
+                        break;
+                    case "link":
+                        jsDirective.linkFunction = null; // TODO: how to get the JsFunction?
                         System.out.println("TODO: parse " + propertyKey + " for " + directiveFunctionName);
                         break;
                     default:
@@ -150,6 +142,22 @@ public class AngularUpgraderServiceImpl {
             }
         }
         return jsDirective;
+    }
+
+    private Map<String, ScopeType> extractScope(AbstractJsStatementPart statement) {
+        if (!(statement instanceof JsStatementBranch)) {
+            return new HashMap<>();
+        }
+        JsStatementBranch statementBranch = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) statement);
+        Map<String, ScopeType> scope = new HashMap<>();
+        for (AbstractJsStatementPart objectLiteralPart : statementBranch.subParts) {
+            if (objectLiteralPart instanceof JsStatementBranch) {
+                String inputOutputName = ((JsStatementBranch) objectLiteralPart).subParts.get(0).toString();
+                String inputOutputType = ((JsStatementBranch) objectLiteralPart).subParts.get(2).toString();
+                scope.put(inputOutputName, ScopeType.getByCode(trimQuotes(inputOutputType)));
+            }
+        }
+        return scope;
     }
 
     private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile, TsModule parentTsModule) {
