@@ -3,6 +3,7 @@ package org.angularjsupgrader.service;
 import com.google.common.base.CaseFormat;
 import org.angularjsupgrader.model.angularjs.*;
 import org.angularjsupgrader.model.typescript.*;
+import org.angularjsupgrader.parser.JavaScriptParser;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -79,9 +80,76 @@ public class AngularUpgraderServiceImpl {
 
     private TsComponent upgradeJsDirective(JsInjectable jsDirective, JsFile parentJsFile, TsModule parentTsModule) {
         TsComponent tsComponent = new TsComponent();
-
+        tsComponent.name = camelToKebab(jsDirective.injectableName);
         tsComponent = upgradeJsInjectable(jsDirective, parentJsFile, tsComponent, parentTsModule);
+
+        JsDirective extractedDirective = extractJsDirective(jsDirective.functionName, parentJsFile);
+        if (extractedDirective != null) {
+            System.out.println(extractedDirective);
+        }
         return tsComponent;
+    }
+
+    private JsDirective extractJsDirective(String directiveFunctionName, JsFile parentJsFile) {
+        JsFunction directiveFunction = getJsFunction(parentJsFile, directiveFunctionName);
+        if (directiveFunction == null) {
+            System.err.println("Could not find the directive for " + directiveFunctionName);
+            return null;
+        }
+        if (directiveFunction.statements.size() != 1) {
+            System.err.println("Can only upgrade directives with 1 statement -> " + directiveFunctionName);
+            return null;
+        }
+        JsStatementBranch returnStatement = getFirstDescendantBranchWithMoreThan1Child(directiveFunction.statements.get(0));
+        if (!returnStatement.type.equals(JavaScriptParser.ReturnStatementContext.class)) {
+            System.err.println(directiveFunctionName + "'s statement must be a return statement");
+            return null;
+        }
+        JsStatementBranch returnedObject = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) returnStatement.subParts.get(1));
+        if (!returnedObject.type.equals(JavaScriptParser.ObjectLiteralContext.class)) {
+            System.err.println(directiveFunctionName + " must return an object");
+            return null;
+        }
+
+        JsDirective jsDirective = new JsDirective();
+        for (AbstractJsStatementPart part : returnedObject.subParts) {
+            if (part.type.equals(JavaScriptParser.PropertyExpressionAssignmentContext.class)) {
+                JsStatementBranch propertyAssignement = (JsStatementBranch) part;
+                String propertyKey = trimQuotes(propertyAssignement.subParts.get(0).toString());
+                JsStatementBranch propertyValue = (JsStatementBranch) propertyAssignement.subParts.get(2);
+                switch (propertyKey) {
+                    case "templateUrl":
+                        jsDirective.templateUrl = propertyValue.toString();
+                        break;
+                    case "template":
+                        jsDirective.template = propertyValue.toString();
+                        break;
+                    case "controllerAs":
+                        jsDirective.controllerAs = trimQuotes(propertyValue.toString());
+                        break;
+                    case "controller":
+                        String controllerName = propertyValue.toString();
+                        if (controllerName.contains(" as ")) {
+                            String[] controllerAsParts = controllerName.split(" as ");
+                            controllerName = controllerAsParts[0];
+                            jsDirective.controllerAs = controllerAsParts[1];
+                        }
+                        jsDirective.controller = getJsFunction(parentJsFile, controllerName);
+                        break;
+                    case "restrict":
+                        jsDirective.restrictType = RestrictType.getByCode(propertyValue.toString());
+                        break;
+                    case "scope":
+                    case "link":
+                    case "bindToController":
+                        System.out.println("TODO: parse " + propertyKey + " for " + directiveFunctionName);
+                        break;
+                    default:
+                        System.err.println("Unsupported return key of " + propertyKey + " for " + directiveFunctionName);
+                }
+            }
+        }
+        return jsDirective;
     }
 
     private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile, TsModule parentTsModule) {
@@ -195,5 +263,16 @@ public class AngularUpgraderServiceImpl {
 
     private String camelToKebab(String camelCase) {
         return CaseFormat.LOWER_CAMEL.to(CaseFormat.LOWER_HYPHEN, camelCase);
+    }
+
+    private JsStatementBranch getFirstDescendantBranchWithMoreThan1Child(JsStatementBranch currentBranch) {
+        if (currentBranch.subParts.size() == 1 && currentBranch.subParts.get(0) instanceof JsStatementBranch) {
+            return getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) currentBranch.subParts.get(0));
+        }
+        return currentBranch;
+    }
+
+    private String trimQuotes(String untrimmed) {
+        return untrimmed.replace("\"", "").replace("'", "");
     }
 }
