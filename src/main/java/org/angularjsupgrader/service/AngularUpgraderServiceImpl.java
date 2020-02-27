@@ -1,6 +1,7 @@
 package org.angularjsupgrader.service;
 
 import com.google.common.base.CaseFormat;
+import org.angularjsupgrader.model.AbstractComponent;
 import org.angularjsupgrader.model.DirectiveComponent;
 import org.angularjsupgrader.model.PageComponent;
 import org.angularjsupgrader.model.angularjs.*;
@@ -115,26 +116,10 @@ public class AngularUpgraderServiceImpl {
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(returnedObject);
 
         for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
+            if (didAssignKeyValue(keyValue, directive, parentJsFile)) continue;
+
             JsStatementBranch propertyValue = keyValue.getValue();
             switch (keyValue.getKey()) {
-                case "templateUrl":
-                    directive.templateUrl = propertyValue.toString();
-                    break;
-                case "template":
-                    directive.template = propertyValue.toString();
-                    break;
-                case "controllerAs":
-                    directive.controllerAs = trimQuotes(propertyValue.toString());
-                    break;
-                case "controller":
-                    String controllerName = propertyValue.toString();
-                    if (controllerName.contains(" as ")) {
-                        String[] controllerAsParts = controllerName.split(" as ");
-                        controllerName = controllerAsParts[0];
-                        directive.controllerAs = controllerAsParts[1];
-                    }
-                    directive.controller = getJsFunction(parentJsFile, controllerName);
-                    break;
                 case "restrict":
                     directive.restrictType = RestrictType.getByCode(propertyValue.toString());
                     break;
@@ -158,6 +143,31 @@ public class AngularUpgraderServiceImpl {
             }
         }
         return directive;
+    }
+
+    private boolean didAssignKeyValue(Map.Entry<String, JsStatementBranch> keyValue, AbstractComponent component, JsFile parentJsFile) {
+        JsStatementBranch propertyValue = keyValue.getValue();
+        switch (keyValue.getKey()) {
+            case "templateUrl":
+                component.templateUrl = propertyValue.toString();
+                return true;
+            case "template":
+                component.template = propertyValue.toString();
+                return true;
+            case "controllerAs":
+                component.controllerAs = trimQuotes(propertyValue.toString());
+                return true;
+            case "controller":
+                String controllerName = propertyValue.toString();
+                if (controllerName.contains(" as ")) {
+                    String[] controllerAsParts = controllerName.split(" as ");
+                    controllerName = controllerAsParts[0];
+                    component.controllerAs = controllerAsParts[1];
+                }
+                component.controller = getJsFunction(parentJsFile, controllerName);
+                return true;
+        }
+        return false;
     }
 
     private Map<String, JsStatementBranch> extractKeyValuesFromObjectLiteral(JsStatementBranch objectLiteral) {
@@ -220,7 +230,6 @@ public class AngularUpgraderServiceImpl {
     }
 
     private List<PageComponent> extractPageComponents(JsInjectable jsConfig, JsFile parentJsFile) {
-        // TODO: we are relying on the assumption that the injected name '$routeProvider' string is the same name as the instantiated variable
         JsFunction jsFunction = getJsFunction(parentJsFile, jsConfig.functionName);
         List<PageComponent> components = new LinkedList<>();
         for (JsStatementBranch statementBranch : jsFunction.statements) {
@@ -229,7 +238,7 @@ public class AngularUpgraderServiceImpl {
             if (isRouteProviderWhenRouteStatement(possibleRouteProviderWhenRoute)) {
                 for (int i = 1; i < possibleRouteProviderWhenRoute.subParts.size(); i++) {
                     if (possibleRouteProviderWhenRoute.subParts.get(i).type.equals(JavaScriptParser.ArgumentsContext.class)) {
-                        components.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i)));
+                        components.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i), parentJsFile));
                     }
                 }
             }
@@ -248,12 +257,23 @@ public class AngularUpgraderServiceImpl {
         );
     }
 
-    private PageComponent extractPageComponent(JsStatementBranch argumentsContext) {
+    private PageComponent extractPageComponent(JsStatementBranch argumentsContext, JsFile parentJsFile) {
         PageComponent component = new PageComponent();
         component.path = argumentsContext.subParts.get(1).toString();
         JsStatementBranch routeProperties = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) argumentsContext.subParts.get(3));
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(routeProperties);
 
+        for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
+            if (didAssignKeyValue(keyValue, component, parentJsFile)) continue;
+
+            switch (keyValue.getKey()) {
+                case "title":
+                    component.title = trimQuotes(keyValue.getValue().toString());
+                    break;
+                default:
+                    System.err.println("Unknown key: " + keyValue.getKey() + " for route " + parentJsFile.filename + ">" + component.path);
+            }
+        }
         return component;
     }
 
