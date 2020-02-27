@@ -60,9 +60,16 @@ public class AngularUpgraderServiceImpl {
                 .collect(Collectors.toList());
 
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
-            // TODO: we need to move this upgrading into our #upgradeJsDirective function
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
         }
+
+        /*
+         * TODO:
+         * - upgrade our jsDirectives after our controllers (using the name of our controller to override the files)
+         *   - or some other way of marking that we have upgrader our controller???
+         * - upgrade our routeProvider.when(path, directive) as a directive
+         */
+
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
             tsModule.services.add(upgradeJsService(jsService, parentJsFile, tsModule));
         }
@@ -103,7 +110,7 @@ public class AngularUpgraderServiceImpl {
             if (part.type.equals(JavaScriptParser.PropertyExpressionAssignmentContext.class)) {
                 JsStatementBranch propertyAssignement = (JsStatementBranch) part;
                 String propertyKey = trimQuotes(propertyAssignement.subParts.get(0).toString());
-                JsStatementBranch propertyValue = (JsStatementBranch) propertyAssignement.subParts.get(2);
+                JsStatementBranch propertyValue = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) propertyAssignement.subParts.get(2));
                 switch (propertyKey) {
                     case "templateUrl":
                         jsDirective.templateUrl = propertyValue.toString();
@@ -130,27 +137,28 @@ public class AngularUpgraderServiceImpl {
                         jsDirective.inputOutpus = extractScope(propertyValue);
                         break;
                     case "bindToController":
-                        jsDirective.bindToController = Boolean.valueOf(propertyValue.toString());
+                        jsDirective.bindToController = Boolean.parseBoolean(propertyValue.toString());
                         break;
                     case "link":
-                        jsDirective.linkFunction = null; // TODO: how to get the JsFunction?
-                        System.out.println("TODO: parse " + propertyKey + " for " + directiveFunctionName);
+                        jsDirective.linkFunction = propertyValue;
+                        break;
+                    case "replace":
+                        System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + directiveFunctionName + " manually");
+                        break;
+                    case "transclude":
+                        jsDirective.transclude = Boolean.parseBoolean(trimQuotes(propertyValue.toString()));
                         break;
                     default:
-                        System.err.println("Unsupported return key of " + propertyKey + " for " + directiveFunctionName);
+                        System.err.println("Unsupported return key of '" + propertyKey + "' for " + parentJsFile.filename + ">" + directiveFunctionName);
                 }
             }
         }
         return jsDirective;
     }
 
-    private Map<String, ScopeType> extractScope(AbstractJsStatementPart statement) {
-        if (!(statement instanceof JsStatementBranch)) {
-            return new HashMap<>();
-        }
-        JsStatementBranch statementBranch = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) statement);
+    private Map<String, ScopeType> extractScope(JsStatementBranch statement) {
         Map<String, ScopeType> scope = new HashMap<>();
-        for (AbstractJsStatementPart objectLiteralPart : statementBranch.subParts) {
+        for (AbstractJsStatementPart objectLiteralPart : statement.subParts) {
             if (objectLiteralPart instanceof JsStatementBranch) {
                 String inputOutputName = ((JsStatementBranch) objectLiteralPart).subParts.get(0).toString();
                 String inputOutputType = ((JsStatementBranch) objectLiteralPart).subParts.get(2).toString();
