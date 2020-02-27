@@ -12,7 +12,8 @@ public class JsDirective {
     public String controllerAs;
     public JsFunction controller;
     public RestrictType restrictType;
-    public JsFunction linkFunction;
+    public JsStatementBranch linkFunction;
     public Map<String, ScopeType> inputOutpus = new HashMap<>();
     public boolean bindToController = false;
+    public Map<String, String> tranclude = new HashMap<>();
 }

@@ -4,7 +4,8 @@ package org.angularjsupgrader.model.angularjs;
  * Created by Philip Harris on 26/02/2020
  */
 public enum ScopeType {
-    INPUT("@"),
+    IN("@"),
+    OUT("&"),
     INOUT("=");
 
     private final String code;
