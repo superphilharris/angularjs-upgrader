@@ -1,6 +1,8 @@
 package org.angularjsupgrader.service;
 
 import com.google.common.base.CaseFormat;
+import org.angularjsupgrader.model.DirectiveComponent;
+import org.angularjsupgrader.model.PageComponent;
 import org.angularjsupgrader.model.angularjs.*;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.parser.JavaScriptParser;
@@ -55,9 +57,13 @@ public class AngularUpgraderServiceImpl {
         tsModule.sourcedFrom = jsModule.sourcedFrom;
         tsModule.parent = parentTsModule;
 
-        List<JsDirective> jsDirectives = getType(jsModule, InjectableType.DIRECTIVE).stream()
+        List<DirectiveComponent> directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
                 .map(jsInjectable -> extractJsDirective(jsInjectable.functionName, parentJsFile))
                 .collect(Collectors.toList());
+        List<PageComponent> pageComponents = new LinkedList<>();
+        for (JsInjectable jsConfig : getType(jsModule, InjectableType.CONFIG)) {
+            pageComponents.addAll(extractPageComponents(jsConfig, parentJsFile));
+        }
 
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
@@ -84,7 +90,7 @@ public class AngularUpgraderServiceImpl {
         return tsModule;
     }
 
-    private JsDirective extractJsDirective(String directiveFunctionName, JsFile parentJsFile) {
+    private DirectiveComponent extractJsDirective(String directiveFunctionName, JsFile parentJsFile) {
         JsFunction directiveFunction = getJsFunction(parentJsFile, directiveFunctionName);
         if (directiveFunction == null) {
             System.err.println("Could not find the directive for " + directiveFunctionName);
@@ -105,55 +111,67 @@ public class AngularUpgraderServiceImpl {
             return null;
         }
 
-        JsDirective jsDirective = new JsDirective();
-        for (AbstractJsStatementPart part : returnedObject.subParts) {
-            if (part.type.equals(JavaScriptParser.PropertyExpressionAssignmentContext.class)) {
-                JsStatementBranch propertyAssignement = (JsStatementBranch) part;
-                String propertyKey = trimQuotes(propertyAssignement.subParts.get(0).toString());
-                JsStatementBranch propertyValue = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) propertyAssignement.subParts.get(2));
-                switch (propertyKey) {
-                    case "templateUrl":
-                        jsDirective.templateUrl = propertyValue.toString();
-                        break;
-                    case "template":
-                        jsDirective.template = propertyValue.toString();
-                        break;
-                    case "controllerAs":
-                        jsDirective.controllerAs = trimQuotes(propertyValue.toString());
-                        break;
-                    case "controller":
-                        String controllerName = propertyValue.toString();
-                        if (controllerName.contains(" as ")) {
-                            String[] controllerAsParts = controllerName.split(" as ");
-                            controllerName = controllerAsParts[0];
-                            jsDirective.controllerAs = controllerAsParts[1];
-                        }
-                        jsDirective.controller = getJsFunction(parentJsFile, controllerName);
-                        break;
-                    case "restrict":
-                        jsDirective.restrictType = RestrictType.getByCode(propertyValue.toString());
-                        break;
-                    case "scope":
-                        jsDirective.inputOutpus = extractScope(propertyValue);
-                        break;
-                    case "bindToController":
-                        jsDirective.bindToController = Boolean.parseBoolean(propertyValue.toString());
-                        break;
-                    case "link":
-                        jsDirective.linkFunction = propertyValue;
-                        break;
-                    case "replace":
-                        System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + directiveFunctionName + " manually");
-                        break;
-                    case "transclude":
-                        jsDirective.transclude = Boolean.parseBoolean(trimQuotes(propertyValue.toString()));
-                        break;
-                    default:
-                        System.err.println("Unsupported return key of '" + propertyKey + "' for " + parentJsFile.filename + ">" + directiveFunctionName);
-                }
+        DirectiveComponent directive = new DirectiveComponent();
+        Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(returnedObject);
+
+        for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
+            JsStatementBranch propertyValue = keyValue.getValue();
+            switch (keyValue.getKey()) {
+                case "templateUrl":
+                    directive.templateUrl = propertyValue.toString();
+                    break;
+                case "template":
+                    directive.template = propertyValue.toString();
+                    break;
+                case "controllerAs":
+                    directive.controllerAs = trimQuotes(propertyValue.toString());
+                    break;
+                case "controller":
+                    String controllerName = propertyValue.toString();
+                    if (controllerName.contains(" as ")) {
+                        String[] controllerAsParts = controllerName.split(" as ");
+                        controllerName = controllerAsParts[0];
+                        directive.controllerAs = controllerAsParts[1];
+                    }
+                    directive.controller = getJsFunction(parentJsFile, controllerName);
+                    break;
+                case "restrict":
+                    directive.restrictType = RestrictType.getByCode(propertyValue.toString());
+                    break;
+                case "scope":
+                    directive.inputOutpus = extractScope(propertyValue);
+                    break;
+                case "bindToController":
+                    directive.bindToController = Boolean.parseBoolean(propertyValue.toString());
+                    break;
+                case "link":
+                    directive.linkFunction = propertyValue;
+                    break;
+                case "replace":
+                    System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + directiveFunctionName + " manually");
+                    break;
+                case "transclude":
+                    directive.transclude = Boolean.parseBoolean(trimQuotes(propertyValue.toString()));
+                    break;
+                default:
+                    System.err.println("Unsupported return key of '" + keyValue.getKey() + "' for " + parentJsFile.filename + ">" + directiveFunctionName);
             }
         }
-        return jsDirective;
+        return directive;
+    }
+
+    private Map<String, JsStatementBranch> extractKeyValuesFromObjectLiteral(JsStatementBranch objectLiteral) {
+        Map<String, JsStatementBranch> keyValues = new HashMap<>();
+        for (AbstractJsStatementPart part : objectLiteral.subParts) {
+            if (part.type.equals(JavaScriptParser.PropertyExpressionAssignmentContext.class)) {
+                JsStatementBranch propertyAssignement = (JsStatementBranch) part;
+                keyValues.put(
+                        trimQuotes(propertyAssignement.subParts.get(0).toString()),
+                        getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) propertyAssignement.subParts.get(2))
+                );
+            }
+        }
+        return keyValues;
     }
 
     private Map<String, ScopeType> extractScope(JsStatementBranch statement) {
@@ -199,6 +217,44 @@ public class AngularUpgraderServiceImpl {
         tsRouting.name = tsModule.name + (sequenceOfConfig == 0 ? "" : 1 + sequenceOfConfig);
         tsRouting.sourcedFrom = jsConfig.functionName + " in " + parentJsFile.filename;
         return upgradeJsInjectable(jsConfig, parentJsFile, tsRouting, tsModule);
+    }
+
+    private List<PageComponent> extractPageComponents(JsInjectable jsConfig, JsFile parentJsFile) {
+        // TODO: we are relying on the assumption that the injected name '$routeProvider' string is the same name as the instantiated variable
+        JsFunction jsFunction = getJsFunction(parentJsFile, jsConfig.functionName);
+        List<PageComponent> components = new LinkedList<>();
+        for (JsStatementBranch statementBranch : jsFunction.statements) {
+            JsStatementBranch possibleRouteProviderWhenRoute = getFirstDescendantBranchWithMoreThan1Child(statementBranch);
+
+            if (isRouteProviderWhenRouteStatement(possibleRouteProviderWhenRoute)) {
+                for (int i = 1; i < possibleRouteProviderWhenRoute.subParts.size(); i++) {
+                    if (possibleRouteProviderWhenRoute.subParts.get(i).type.equals(JavaScriptParser.ArgumentsContext.class)) {
+                        components.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i)));
+                    }
+                }
+            }
+        }
+        return components;
+    }
+
+    private boolean isRouteProviderWhenRouteStatement(JsStatementBranch statementBranch) {
+        // TODO: we are relying on the assumption that the injected name '$routeProvider' string is the same name as the instantiated variable
+        if (!(statementBranch.subParts.get(0) instanceof JsStatementBranch)) return false;
+        JsStatementBranch memberDotExpression = (JsStatementBranch) statementBranch.subParts.get(0);
+        return (
+                memberDotExpression.subParts.size() > 2 &&
+                        memberDotExpression.subParts.get(0).toString().equals("$routeProvider") &&
+                        memberDotExpression.subParts.get(2).toString().equals("when")
+        );
+    }
+
+    private PageComponent extractPageComponent(JsStatementBranch argumentsContext) {
+        PageComponent component = new PageComponent();
+        component.path = argumentsContext.subParts.get(1).toString();
+        JsStatementBranch routeProperties = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) argumentsContext.subParts.get(3));
+        Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(routeProperties);
+
+        return component;
     }
 
     private <TS extends AbstractTsClass> TS upgradeJsInjectable(JsInjectable jsInjectable, JsFile parentJsFile, TS tsClass, TsModule parentTsModule) {
@@ -282,7 +338,8 @@ public class AngularUpgraderServiceImpl {
     }
 
     private JsStatementBranch getFirstDescendantBranchWithMoreThan1Child(JsStatementBranch currentBranch) {
-        if (currentBranch.subParts.size() == 1 && currentBranch.subParts.get(0) instanceof JsStatementBranch) {
+        if ((currentBranch.subParts.size() == 1 && currentBranch.subParts.get(0) instanceof JsStatementBranch) ||
+                (currentBranch.subParts.size() == 2 && currentBranch.subParts.get(1).type.equals(JavaScriptParser.EosContext.class))) {
             return getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) currentBranch.subParts.get(0));
         }
         return currentBranch;
