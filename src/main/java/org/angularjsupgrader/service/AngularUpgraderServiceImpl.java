@@ -162,9 +162,16 @@ public class AngularUpgraderServiceImpl {
                 if (controllerName.contains(" as ")) {
                     String[] controllerAsParts = controllerName.split(" as ");
                     controllerName = controllerAsParts[0];
-                    component.controllerAs = controllerAsParts[1];
+                    component.controllerAs = trimQuotes(controllerAsParts[1]);
                 }
-                component.controller = getJsFunction(parentJsFile, controllerName);
+                if (controllerName.contains("'") || controllerName.contains("\"")) {
+                    component.controllerInjectedName = trimQuotes(controllerName);
+                } else {
+                    component.controllerFunction = getJsFunction(parentJsFile, controllerName);
+                }
+                return true;
+            case "resolve":
+                component.resolve = extractKeyValuesFromObjectLiteral(propertyValue);
                 return true;
         }
         return false;
@@ -248,6 +255,7 @@ public class AngularUpgraderServiceImpl {
 
     private boolean isRouteProviderWhenRouteStatement(JsStatementBranch statementBranch) {
         // TODO: we are relying on the assumption that the injected name '$routeProvider' string is the same name as the instantiated variable
+        if (statementBranch.subParts.size() == 0) return false;
         if (!(statementBranch.subParts.get(0) instanceof JsStatementBranch)) return false;
         JsStatementBranch memberDotExpression = (JsStatementBranch) statementBranch.subParts.get(0);
         return (
