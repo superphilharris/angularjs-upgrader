@@ -2,8 +2,9 @@ package org.angularjsupgrader.service;
 
 import com.google.common.base.CaseFormat;
 import org.angularjsupgrader.model.AbstractComponent;
-import org.angularjsupgrader.model.DirectiveComponent;
-import org.angularjsupgrader.model.PageComponent;
+import org.angularjsupgrader.model.JsConfig;
+import org.angularjsupgrader.model.JsDirective;
+import org.angularjsupgrader.model.JsRoutePage;
 import org.angularjsupgrader.model.angularjs.*;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.parser.JavaScriptParser;
@@ -58,24 +59,16 @@ public class AngularUpgraderServiceImpl {
         tsModule.sourcedFrom = jsModule.sourcedFrom;
         tsModule.parent = parentTsModule;
 
-        List<DirectiveComponent> directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
-                .map(jsInjectable -> extractJsDirective(jsInjectable.functionName, parentJsFile))
+        List<JsDirective> directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
+                .map(jsInjectable -> extractJsDirective(jsInjectable, parentJsFile))
                 .collect(Collectors.toList());
-        List<PageComponent> pageComponents = new LinkedList<>();
-        for (JsInjectable jsConfig : getType(jsModule, InjectableType.CONFIG)) {
-            pageComponents.addAll(extractPageComponents(jsConfig, parentJsFile));
-        }
+        List<JsConfig> jsConfigs = getType(jsModule, InjectableType.CONFIG).stream()
+                .map(jsConfig -> extractPageComponents(jsConfig, parentJsFile))
+                .collect(Collectors.toList());
 
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
         }
-
-        /*
-         * TODO:
-         * - upgrade our jsDirectives after our controllers (using the name of our controller to override the files)
-         *   - or some other way of marking that we have upgrader our controller???
-         * - upgrade our routeProvider.when(path, directive) as a directive
-         */
 
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
             tsModule.services.add(upgradeJsService(jsService, parentJsFile, tsModule));
@@ -83,7 +76,6 @@ public class AngularUpgraderServiceImpl {
         for (JsInjectable jsFactory : getType(jsModule, InjectableType.FACTORY)) {
             tsModule.services.add(upgradeJsService(jsFactory, parentJsFile, tsModule));
         }
-        List<JsInjectable> jsConfigs = getType(jsModule, InjectableType.CONFIG);
         for (int i = 0; i < jsConfigs.size(); i++) {
             tsModule.routings.add(upgradeJsConfig(jsConfigs.get(i), parentJsFile, tsModule, i));
         }
@@ -91,28 +83,29 @@ public class AngularUpgraderServiceImpl {
         return tsModule;
     }
 
-    private DirectiveComponent extractJsDirective(String directiveFunctionName, JsFile parentJsFile) {
-        JsFunction directiveFunction = getJsFunction(parentJsFile, directiveFunctionName);
+    private JsDirective extractJsDirective(JsInjectable jsInjectable, JsFile parentJsFile) {
+        JsFunction directiveFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
+        JsDirective directive = new JsDirective();
+        directive.originalInjectable = jsInjectable;
         if (directiveFunction == null) {
-            System.err.println("Could not find the directive for " + directiveFunctionName);
-            return null;
+            System.err.println("Could not find the directive for " + jsInjectable.functionName);
+            return directive;
         }
         if (directiveFunction.statements.size() != 1) {
-            System.err.println("Can only upgrade directives with 1 statement -> " + directiveFunctionName);
-            return null;
+            System.err.println("Can only upgrade directives with 1 statement -> " + jsInjectable.functionName);
+            return directive;
         }
         JsStatementBranch returnStatement = getFirstDescendantBranchWithMoreThan1Child(directiveFunction.statements.get(0));
         if (!returnStatement.type.equals(JavaScriptParser.ReturnStatementContext.class)) {
-            System.err.println(directiveFunctionName + "'s statement must be a return statement");
-            return null;
+            System.err.println(jsInjectable.functionName + "'s statement must be a return statement");
+            return directive;
         }
         JsStatementBranch returnedObject = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) returnStatement.subParts.get(1));
         if (!returnedObject.type.equals(JavaScriptParser.ObjectLiteralContext.class)) {
-            System.err.println(directiveFunctionName + " must return an object");
-            return null;
+            System.err.println(jsInjectable.functionName + " must return an object");
+            return directive;
         }
 
-        DirectiveComponent directive = new DirectiveComponent();
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(returnedObject);
 
         for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
@@ -133,13 +126,13 @@ public class AngularUpgraderServiceImpl {
                     directive.linkFunction = propertyValue;
                     break;
                 case "replace":
-                    System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + directiveFunctionName + " manually");
+                    System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + jsInjectable.functionName + " manually");
                     break;
                 case "transclude":
                     directive.transclude = Boolean.parseBoolean(trimQuotes(propertyValue.toString()));
                     break;
                 default:
-                    System.err.println("Unsupported return key of '" + keyValue.getKey() + "' for " + parentJsFile.filename + ">" + directiveFunctionName);
+                    System.err.println("Unsupported return key of '" + keyValue.getKey() + "' for " + parentJsFile.filename + ">" + jsInjectable.functionName);
             }
         }
         return directive;
@@ -228,29 +221,31 @@ public class AngularUpgraderServiceImpl {
         return tsStatement;
     }
 
-    private TsRouting upgradeJsConfig(JsInjectable jsConfig, JsFile parentJsFile, TsModule tsModule, int sequenceOfConfig) {
+    private TsRouting upgradeJsConfig(JsConfig jsConfig, JsFile parentJsFile, TsModule tsModule, int sequenceOfConfig) {
         // TODO: extract out our paths from our upgraded component
         TsRouting tsRouting = new TsRouting();
         tsRouting.name = tsModule.name + (sequenceOfConfig == 0 ? "" : 1 + sequenceOfConfig);
-        tsRouting.sourcedFrom = jsConfig.functionName + " in " + parentJsFile.filename;
-        return upgradeJsInjectable(jsConfig, parentJsFile, tsRouting, tsModule);
+        tsRouting.sourcedFrom = jsConfig.originalInjectable.functionName + " in " + parentJsFile.filename;
+
+        return upgradeJsInjectable(jsConfig.originalInjectable, parentJsFile, tsRouting, tsModule);
     }
 
-    private List<PageComponent> extractPageComponents(JsInjectable jsConfig, JsFile parentJsFile) {
-        JsFunction jsFunction = getJsFunction(parentJsFile, jsConfig.functionName);
-        List<PageComponent> components = new LinkedList<>();
+    private JsConfig extractPageComponents(JsInjectable jsInjectable, JsFile parentJsFile) {
+        JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
+        JsConfig jsConfig = new JsConfig();
+        jsConfig.originalInjectable = jsInjectable;
         for (JsStatementBranch statementBranch : jsFunction.statements) {
             JsStatementBranch possibleRouteProviderWhenRoute = getFirstDescendantBranchWithMoreThan1Child(statementBranch);
 
             if (isRouteProviderWhenRouteStatement(possibleRouteProviderWhenRoute)) {
                 for (int i = 1; i < possibleRouteProviderWhenRoute.subParts.size(); i++) {
                     if (possibleRouteProviderWhenRoute.subParts.get(i).type.equals(JavaScriptParser.ArgumentsContext.class)) {
-                        components.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i), parentJsFile));
+                        jsConfig.pages.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i), parentJsFile));
                     }
                 }
             }
         }
-        return components;
+        return jsConfig;
     }
 
     private boolean isRouteProviderWhenRouteStatement(JsStatementBranch statementBranch) {
@@ -265,8 +260,8 @@ public class AngularUpgraderServiceImpl {
         );
     }
 
-    private PageComponent extractPageComponent(JsStatementBranch argumentsContext, JsFile parentJsFile) {
-        PageComponent component = new PageComponent();
+    private JsRoutePage extractPageComponent(JsStatementBranch argumentsContext, JsFile parentJsFile) {
+        JsRoutePage component = new JsRoutePage();
         component.path = argumentsContext.subParts.get(1).toString();
         JsStatementBranch routeProperties = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) argumentsContext.subParts.get(3));
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(routeProperties);
