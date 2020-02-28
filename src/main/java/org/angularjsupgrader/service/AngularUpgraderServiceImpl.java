@@ -30,6 +30,10 @@ public class AngularUpgraderServiceImpl {
             }
         }
 
+        for (TsModule tsModule : tsProgram.childModules) {
+            resolveTsModule(tsModule);
+        }
+
         return tsProgram;
     }
 
@@ -53,32 +57,39 @@ public class AngularUpgraderServiceImpl {
         return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
 
+    private void resolveTsModule(TsModule tsModule) {
+        for (int i = 0; i < tsModule.needToUpgradeJs.configs.size(); i++) {
+            tsModule.routings.add(upgradeJsConfig(tsModule.needToUpgradeJs.configs.get(i), tsModule.needToUpgradeJs.sourcedFrom, tsModule, i));
+        }
+        for (TsModule childModule : tsModule.childModules) {
+            resolveTsModule(childModule);
+        }
+    }
+
     private TsModule upgradeJsModule(JsModule jsModule, JsFile parentJsFile, TsModule parentTsModule) {
         TsModule tsModule = new TsModule();
         tsModule.name = camelToKebab(jsModule.name.replace(".", "-"));
         tsModule.sourcedFrom = jsModule.sourcedFrom;
         tsModule.parent = parentTsModule;
 
-        List<JsDirective> directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
-                .map(jsInjectable -> extractJsDirective(jsInjectable, parentJsFile))
-                .collect(Collectors.toList());
-        List<JsConfig> jsConfigs = getType(jsModule, InjectableType.CONFIG).stream()
-                .map(jsConfig -> extractPageComponents(jsConfig, parentJsFile))
-                .collect(Collectors.toList());
-
         for (JsInjectable jsController : getType(jsModule, InjectableType.CONTROLLER)) {
             tsModule.components.add(upgradeJsController(jsController, parentJsFile, tsModule));
         }
-
         for (JsInjectable jsService : getType(jsModule, InjectableType.SERVICE)) {
             tsModule.services.add(upgradeJsService(jsService, parentJsFile, tsModule));
         }
         for (JsInjectable jsFactory : getType(jsModule, InjectableType.FACTORY)) {
             tsModule.services.add(upgradeJsService(jsFactory, parentJsFile, tsModule));
         }
-        for (int i = 0; i < jsConfigs.size(); i++) {
-            tsModule.routings.add(upgradeJsConfig(jsConfigs.get(i), parentJsFile, tsModule, i));
-        }
+
+        // Stash this js until we have upgraded all the controllers / services first as these are referenced by our routes and directives
+        tsModule.needToUpgradeJs.sourcedFrom = parentJsFile;
+        tsModule.needToUpgradeJs.directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
+                .map(jsInjectable -> extractJsDirective(jsInjectable, parentJsFile))
+                .collect(Collectors.toList());
+        tsModule.needToUpgradeJs.configs = getType(jsModule, InjectableType.CONFIG).stream()
+                .map(jsConfig -> extractPageComponents(jsConfig, parentJsFile))
+                .collect(Collectors.toList());
 
         return tsModule;
     }
