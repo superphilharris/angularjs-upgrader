@@ -14,7 +14,7 @@ public class Main {
         TypeScriptFileGenerationServiceImpl typeScriptFileGenerationService = new TypeScriptFileGenerationServiceImpl();
         AngularUpgraderServiceImpl angularUpgraderService = new AngularUpgraderServiceImpl();
 
-        List<String> files = directoryFileListerService.listJsFilesInDirectory("examples/candidate/gig/");
+        List<String> files = directoryFileListerService.listJsFilesInDirectory("examples/");
         for (String filename : files) {
             System.out.println("PARSING: " + filename);
             JavaScriptParser parser = sampleFileParserService.parse(filename);
