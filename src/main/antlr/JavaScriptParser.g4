@@ -45,7 +45,7 @@ program
 
 ngModuleDeclaration
     : NgModuleSelector OpenParen StringLiteral (Comma arrayLiteral)? CloseParen
-      ngModuleDeclarationInjectable+
+      ngModuleDeclarationInjectable*
       eos
     ;
 
