@@ -19,6 +19,7 @@ TODO:
 
 - Upgrade function contents
 - Convert AngularJs Promises into RxJs Subscriptions
+- Get the program to accept the AngularJs-input path from the cmd line, rather than being hard-coded to the resources folder
 - Upgrade html templates
 - Extract out `ng-controller="..."` from templates
 
