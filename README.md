@@ -18,6 +18,7 @@ The angularjs-upgrader attempts to
 TODO:
 
 - Upgrade function contents
+- Convert AngularJs Promises into RxJs Subscriptions
 - Upgrade html templates
 - Extract out `ng-controller="..."` from templates
 
