@@ -31,7 +31,7 @@ public class AngularUpgraderServiceImpl {
         }
 
         for (TsModule tsModule : tsProgram.childModules) {
-            upgradeModuleConfigAndRoute(tsModule);
+            upgradeModuleConfigAndRoute(tsModule, tsProgram);
         }
 
         return tsProgram;
@@ -57,14 +57,17 @@ public class AngularUpgraderServiceImpl {
         return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
 
-    private void upgradeModuleConfigAndRoute(TsModule tsModule) {
+    private void upgradeModuleConfigAndRoute(TsModule tsModule, TsProgram tsProgram) {
         // TODO: here phil we have our controllers upgraded
         // so we can upgrade our route items and directives
         for (int i = 0; i < tsModule.needToUpgradeJs.configs.size(); i++) {
             tsModule.routings.add(upgradeJsConfig(tsModule.needToUpgradeJs.configs.get(i), tsModule.needToUpgradeJs.sourcedFrom, tsModule, i));
         }
+        for (JsDirective jsDirective : tsModule.needToUpgradeJs.directives) {
+            TsComponent component = upgradeJsDirective(jsDirective, tsModule, tsProgram);
+        }
         for (TsModule childModule : tsModule.childModules) {
-            upgradeModuleConfigAndRoute(childModule);
+            upgradeModuleConfigAndRoute(childModule, tsProgram);
         }
     }
 
@@ -211,6 +214,7 @@ public class AngularUpgraderServiceImpl {
 
     private TsComponent upgradeJsController(JsInjectable jsController, JsFile parentJsFile, TsModule parentTsModule) {
         TsComponent tsComponent = new TsComponent();
+        tsComponent.controllerSourcedFrom = jsController;
         tsComponent.name = camelToKebab(jsController.injectableName.replace("Controller", ""));
         return upgradeJsInjectable(jsController, parentJsFile, tsComponent, parentTsModule);
     }
@@ -241,6 +245,44 @@ public class AngularUpgraderServiceImpl {
         tsRouting.sourcedFrom = jsConfig.originalInjectable.functionName + " in " + parentJsFile.filename;
 
         return upgradeJsInjectable(jsConfig.originalInjectable, parentJsFile, tsRouting, tsModule);
+    }
+
+    private TsComponent upgradeJsDirective(JsDirective jsDirective, TsModule tsModule, TsProgram tsProgram) {
+        TsComponent tsComponent = null; // TODO: get the controller by upgrading the jsDirective.controllerFunction
+        if (jsDirective.controllerInjectedName != null) {
+            tsComponent = findControllerComponentInSubModules(tsProgram, jsDirective.controllerInjectedName);
+        }
+        if (tsComponent == null) {
+            tsComponent = new TsComponent();
+            tsModule.components.add(tsComponent);
+        }
+
+        tsComponent.name = camelToKebab(jsDirective.originalInjectable.injectableName);
+        tsComponent.template = jsDirective.template;
+        tsComponent.templateUrl = jsDirective.templateUrl;
+
+        return tsComponent;
+    }
+
+    private TsComponent findControllerComponentInSubModules(AbstractTsModule tsModule, String controllerInjectableName) {
+        for (TsModule childTsModule : tsModule.childModules) {
+            TsComponent foundComponent = findControllerComponent(childTsModule, controllerInjectableName);
+            if (foundComponent != null) {
+                return foundComponent;
+            }
+        }
+        return null;
+    }
+
+    private TsComponent findControllerComponent(TsModule tsModule, String controllerInjectableName) {
+        for (TsComponent tsComponent : tsModule.components) {
+            if (tsComponent.controllerSourcedFrom != null) {
+                if (tsComponent.controllerSourcedFrom.injectableName.equals(controllerInjectableName)) {
+                    return tsComponent;
+                }
+            }
+        }
+        return findControllerComponentInSubModules(tsModule, controllerInjectableName);
     }
 
     private JsConfig extractPageComponents(JsInjectable jsInjectable, JsFile parentJsFile) {

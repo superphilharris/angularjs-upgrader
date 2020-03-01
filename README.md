@@ -14,6 +14,7 @@ The angularjs-upgrader attempts to
 # Limitations
 
 - It will not generate DTO structures for json objects fetched from your server
+- It assumes that you are using ui-bootstrap for AngularJs and ngx-bootstrap for Angular8 UI
 
 TODO:
 
@@ -22,7 +23,7 @@ TODO:
 - Get the program to accept the AngularJs-input path from the cmd line, rather than being hard-coded to the resources folder
 - Upgrade html templates
 - Extract out `ng-controller="..."` from templates
-
+- Allow multiple directives to reference the same template (currently they will override the previous)
 ## Antlr (Optional)
 Antlr is useful for debugging issues with the grammar `*.g4` files. 
 Download the Antlr jars from https://www.antlr.org/download.html

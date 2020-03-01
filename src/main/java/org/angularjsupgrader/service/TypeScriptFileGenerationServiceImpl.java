@@ -81,7 +81,13 @@ public class TypeScriptFileGenerationServiceImpl {
 
         // Template
         List<String> templateLines = new LinkedList<>();
-        templateLines.add("<p>" + component.name + " works!</p>");
+        if (component.template != null) {
+            templateLines.add(component.template);
+        } else if (component.templateUrl != null) {
+            templateLines.add("<div ngInclude=\"" + component.templateUrl + "\"></div>"); // TODO: get the syntax correct
+        } else {
+            templateLines.add("<p>" + component.name + " works!</p>");
+        }
         writeFile(templateLines, directory + component.name + ".component.html");
 
         // Controller
