@@ -287,7 +287,11 @@ public class TypeScriptFileGenerationServiceImpl {
         String[] parts = kebabCase.split("-");
         String camelCase = "";
         for (String part : parts) {
-            camelCase += part.substring(0, 1).toUpperCase() + part.substring(1);
+            if (part.length() <= 1) {
+                camelCase += part.toUpperCase();
+            } else {
+                camelCase += part.substring(0, 1).toUpperCase() + part.substring(1);
+            }
         }
         return camelCase;
     }
