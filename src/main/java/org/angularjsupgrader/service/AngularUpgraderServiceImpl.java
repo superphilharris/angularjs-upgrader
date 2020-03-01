@@ -31,7 +31,7 @@ public class AngularUpgraderServiceImpl {
         }
 
         for (TsModule tsModule : tsProgram.childModules) {
-            resolveTsModule(tsModule);
+            upgradeModuleConfigAndRoute(tsModule);
         }
 
         return tsProgram;
@@ -57,12 +57,14 @@ public class AngularUpgraderServiceImpl {
         return getOrCreateModuleFromPath(modulePath, newModule, position + 1);
     }
 
-    private void resolveTsModule(TsModule tsModule) {
+    private void upgradeModuleConfigAndRoute(TsModule tsModule) {
+        // TODO: here phil we have our controllers upgraded
+        // so we can upgrade our route items and directives
         for (int i = 0; i < tsModule.needToUpgradeJs.configs.size(); i++) {
             tsModule.routings.add(upgradeJsConfig(tsModule.needToUpgradeJs.configs.get(i), tsModule.needToUpgradeJs.sourcedFrom, tsModule, i));
         }
         for (TsModule childModule : tsModule.childModules) {
-            resolveTsModule(childModule);
+            upgradeModuleConfigAndRoute(childModule);
         }
     }
 
