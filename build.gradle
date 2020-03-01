@@ -20,7 +20,7 @@ task copyBaseClasses(type: Copy) {
     into 'build/generated-src/antlr/main/'
 }
 
-task copyGeneratedSource(type: Copy) {
+task doNotRun_copyGeneratedSourceFromBuildIntoSrc(type: Copy) {
     from 'build/generated-src/antlr/main'
     into 'src/main/java/org/angularjsupgrader/parser'
 }
