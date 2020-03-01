@@ -40,7 +40,7 @@ package org.angularjsupgrader.parser;
 
 
 
-NgModuleSelector:               'angular.module';
+NgModuleSelector:               'angular' [\r\n\t\u2028\u2029 ]* '.module';
 //NgInject:                       '.$inject';
 
 // Normal JS Below this line:
