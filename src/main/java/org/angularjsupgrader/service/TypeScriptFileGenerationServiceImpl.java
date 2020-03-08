@@ -84,7 +84,7 @@ public class TypeScriptFileGenerationServiceImpl {
         if (component.template != null) {
             templateLines.add(component.template);
         } else if (component.templateUrl != null) {
-            templateLines.add("<div ngInclude=\"" + component.templateUrl + "\"></div>"); // TODO: get the syntax correct
+            templateLines.add("<ng-container *ngTemplateOutlet=\"" + component.templateUrl + "\"></ng-container>"); // TODO: get the syntax correct
         } else {
             templateLines.add("<p>" + component.name + " works!</p>");
         }
@@ -205,7 +205,7 @@ public class TypeScriptFileGenerationServiceImpl {
         List<String> classLines = new LinkedList<>();
         classLines.add("import {NgModule} from '@angular/core';\n" +
                 "import {RouterModule, Routes} from '@angular/router';\n\n" +
-                "const routes: Routes = [\n");
+                "const routes: Routes = [");
         classLines.add(routing.pathToComponent.entrySet().stream()
                 .map(pathToComponent -> {
                     return "  {\n" +

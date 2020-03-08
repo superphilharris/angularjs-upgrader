@@ -90,16 +90,16 @@ public class AngularUpgraderServiceImpl {
         // Stash this js until we have upgraded all the controllers / services first as these are referenced by our routes and directives
         tsModule.needToUpgradeJs.sourcedFrom = parentJsFile;
         tsModule.needToUpgradeJs.directives = getType(jsModule, InjectableType.DIRECTIVE).stream()
-                .map(jsInjectable -> extractJsDirective(jsInjectable, parentJsFile))
+                .map(jsInjectable -> extractJsDirective(jsInjectable, parentJsFile, tsModule))
                 .collect(Collectors.toList());
         tsModule.needToUpgradeJs.configs = getType(jsModule, InjectableType.CONFIG).stream()
-                .map(jsConfig -> extractPageComponents(jsConfig, parentJsFile))
+                .map(jsConfig -> extractPageComponents(jsConfig, parentJsFile, tsModule))
                 .collect(Collectors.toList());
 
         return tsModule;
     }
 
-    private JsDirective extractJsDirective(JsInjectable jsInjectable, JsFile parentJsFile) {
+    private JsDirective extractJsDirective(JsInjectable jsInjectable, JsFile parentJsFile, TsModule parentTsModule) {
         JsFunction directiveFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
         JsDirective directive = new JsDirective();
         directive.originalInjectable = jsInjectable;
@@ -125,7 +125,7 @@ public class AngularUpgraderServiceImpl {
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(returnedObject);
 
         for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
-            if (didAssignKeyValue(keyValue, directive, parentJsFile)) continue;
+            if (didAssignKeyValue(keyValue, directive, parentJsFile, parentTsModule)) continue;
 
             JsStatementBranch propertyValue = keyValue.getValue();
             switch (keyValue.getKey()) {
@@ -154,7 +154,7 @@ public class AngularUpgraderServiceImpl {
         return directive;
     }
 
-    private boolean didAssignKeyValue(Map.Entry<String, JsStatementBranch> keyValue, AbstractComponent component, JsFile parentJsFile) {
+    private boolean didAssignKeyValue(Map.Entry<String, JsStatementBranch> keyValue, AbstractComponent component, JsFile parentJsFile, TsModule parentTsModule) {
         JsStatementBranch propertyValue = keyValue.getValue();
         switch (keyValue.getKey()) {
             case "templateUrl":
@@ -176,7 +176,8 @@ public class AngularUpgraderServiceImpl {
                 if (controllerName.contains("'") || controllerName.contains("\"")) {
                     component.controllerInjectedName = trimQuotes(controllerName);
                 } else {
-                    component.controllerFunction = getJsFunction(parentJsFile, controllerName);
+                    component.controllerFunctionName = controllerName;
+                    component.upgradedController = upgradeJsControllerFromFunctionName(parentJsFile, controllerName, parentTsModule);
                 }
                 return true;
             case "resolve":
@@ -184,6 +185,14 @@ public class AngularUpgraderServiceImpl {
                 return true;
         }
         return false;
+    }
+
+    private TsComponent upgradeJsControllerFromFunctionName(JsFile parentJsFile, String controllerName, TsModule parentTsModule) {
+        TsComponent tsComponent = new TsComponent();
+        tsComponent.name = camelToKebab(controllerName.replace("Controller", ""));
+        JsInjectable mockJsInjectable = new JsInjectable();
+        mockJsInjectable.functionName = controllerName;
+        return upgradeJsInjectable(mockJsInjectable, parentJsFile, tsComponent, parentTsModule);
     }
 
     private Map<String, JsStatementBranch> extractKeyValuesFromObjectLiteral(JsStatementBranch objectLiteral) {
@@ -244,27 +253,44 @@ public class AngularUpgraderServiceImpl {
         tsRouting.sourcedFrom = jsConfig.originalInjectable.functionName + " in " + parentJsFile.filename;
 
         for (JsRoutePage jsRoutePage : jsConfig.pages) {
-            TsComponent tsComponent = upgradeComponent(jsRoutePage, tsModule, tsProgram);
+            TsComponent tsComponent = upgradeComponent(jsRoutePage, tsModule, tsProgram, getNameFromPath(jsRoutePage.path));
             tsRouting.pathToComponent.put(jsRoutePage.path, tsComponent);
         }
 
         return upgradeJsInjectable(jsConfig.originalInjectable, parentJsFile, tsRouting, tsModule);
     }
 
+    private String getNameFromPath(String path) {
+        String result = trimQuotes(path.replace("/", "-"))
+                .replaceAll("-$", "").replaceAll("^-", "");
+        if (result.indexOf(":") > 0) {
+            result = result.substring(0, result.indexOf(":"));
+        }
+        return result;
+    }
+
     private TsComponent upgradeJsDirective(JsDirective jsDirective, TsModule tsModule, TsProgram tsProgram) {
-        TsComponent tsComponent = upgradeComponent(jsDirective, tsModule, tsProgram);
-        tsComponent.name = camelToKebab(jsDirective.originalInjectable.injectableName);
+        TsComponent tsComponent = upgradeComponent(jsDirective, tsModule, tsProgram, jsDirective.originalInjectable.injectableName);
         // TODO: upgrade our jsDirective-specific stuff here
         return tsComponent;
     }
 
-    private TsComponent upgradeComponent(AbstractComponent jsComponent, TsModule tsModule, TsProgram tsProgram) {
-        TsComponent tsComponent = null; // TODO: get the controller by upgrading the jsDirective.controllerFunction
+    private TsComponent upgradeComponent(AbstractComponent jsComponent, TsModule tsModule, TsProgram tsProgram, String componentName) {
+        // TODO: we should probably use the 'componentName' as our component name, rather than our controller name
+        TsComponent tsComponent = null;
         if (jsComponent.controllerInjectedName != null) {
             tsComponent = findControllerComponentInSubModules(tsProgram, jsComponent.controllerInjectedName);
         }
+        if (jsComponent.controllerFunctionName != null) {
+            tsComponent = findComponentByFunctionName(tsModule, jsComponent.controllerFunctionName);
+        }
         if (tsComponent == null) {
-            tsComponent = new TsComponent();
+            if (jsComponent.upgradedController != null) {
+                tsComponent = jsComponent.upgradedController;
+            } else { // There was no controller, so lets generate one from the template name
+                tsComponent = new TsComponent();
+                tsComponent.name = camelToKebab(componentName);
+            }
             tsModule.components.add(tsComponent);
         }
 
@@ -294,7 +320,18 @@ public class AngularUpgraderServiceImpl {
         return findControllerComponentInSubModules(tsModule, controllerInjectableName);
     }
 
-    private JsConfig extractPageComponents(JsInjectable jsInjectable, JsFile parentJsFile) {
+    private TsComponent findComponentByFunctionName(TsModule tsModule, String controllerFunctionName) {
+        for (TsComponent tsComponent : tsModule.components) {
+            if (tsComponent.controllerSourcedFrom != null) {
+                if (tsComponent.controllerSourcedFrom.functionName.equals(controllerFunctionName)) {
+                    return tsComponent;
+                }
+            }
+        }
+        return null;
+    }
+
+    private JsConfig extractPageComponents(JsInjectable jsInjectable, JsFile parentJsFile, TsModule parentTsModule) {
         JsFunction jsFunction = getJsFunction(parentJsFile, jsInjectable.functionName);
         JsConfig jsConfig = new JsConfig();
         jsConfig.originalInjectable = jsInjectable;
@@ -304,7 +341,7 @@ public class AngularUpgraderServiceImpl {
             if (isRouteProviderWhenRouteStatement(possibleRouteProviderWhenRoute)) {
                 for (int i = 1; i < possibleRouteProviderWhenRoute.subParts.size(); i++) {
                     if (possibleRouteProviderWhenRoute.subParts.get(i).type.equals(JavaScriptParser.ArgumentsContext.class)) {
-                        jsConfig.pages.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i), parentJsFile));
+                        jsConfig.pages.add(extractPageComponent((JsStatementBranch) possibleRouteProviderWhenRoute.subParts.get(i), parentJsFile, parentTsModule));
                     }
                 }
             }
@@ -324,18 +361,21 @@ public class AngularUpgraderServiceImpl {
         );
     }
 
-    private JsRoutePage extractPageComponent(JsStatementBranch argumentsContext, JsFile parentJsFile) {
+    private JsRoutePage extractPageComponent(JsStatementBranch argumentsContext, JsFile parentJsFile, TsModule parentTsModule) {
         JsRoutePage component = new JsRoutePage();
         component.path = argumentsContext.subParts.get(1).toString();
         JsStatementBranch routeProperties = getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) argumentsContext.subParts.get(3));
         Map<String, JsStatementBranch> keyValues = extractKeyValuesFromObjectLiteral(routeProperties);
 
         for (Map.Entry<String, JsStatementBranch> keyValue : keyValues.entrySet()) {
-            if (didAssignKeyValue(keyValue, component, parentJsFile)) continue;
+            if (didAssignKeyValue(keyValue, component, parentJsFile, parentTsModule)) continue;
 
             switch (keyValue.getKey()) {
                 case "title":
                     component.title = trimQuotes(keyValue.getValue().toString());
+                    break;
+                case "reloadOnSearch":
+                    component.reloadOnSearch = Boolean.parseBoolean(keyValue.getValue().toString());
                     break;
                 default:
                     System.err.println("Unknown key: " + keyValue.getKey() + " for route " + parentJsFile.filename + ">" + component.path);
@@ -375,6 +415,7 @@ public class AngularUpgraderServiceImpl {
         }
         return null;
     }
+
 
     private List<String> getInjects(String functionName, JsFile parentJsFile) {
         if (functionName == null) return new LinkedList<>();

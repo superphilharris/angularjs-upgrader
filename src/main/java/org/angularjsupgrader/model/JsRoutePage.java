@@ -6,4 +6,5 @@ package org.angularjsupgrader.model;
 public class JsRoutePage extends AbstractComponent {
     public String path;
     public String title;
+    public boolean reloadOnSearch;
 }

@@ -1,8 +1,8 @@
 package org.angularjsupgrader.model;
 
-import org.angularjsupgrader.model.angularjs.JsFunction;
 import org.angularjsupgrader.model.angularjs.JsInjectable;
 import org.angularjsupgrader.model.angularjs.JsStatementBranch;
+import org.angularjsupgrader.model.typescript.TsComponent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +15,8 @@ public abstract class AbstractComponent {
     public String templateUrl;
     public String template;
     public String controllerAs;
-    public JsFunction controllerFunction;
+    public TsComponent upgradedController;
+    public String controllerFunctionName;
     public String controllerInjectedName;
     public Map<String, JsStatementBranch> resolve = new HashMap<>();
 }
