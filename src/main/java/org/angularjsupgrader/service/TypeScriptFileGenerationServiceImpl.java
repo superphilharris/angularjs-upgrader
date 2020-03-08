@@ -205,7 +205,7 @@ public class TypeScriptFileGenerationServiceImpl {
         List<String> classLines = new LinkedList<>();
         classLines.add("import {NgModule} from '@angular/core';\n" +
                 "import {RouterModule, Routes} from '@angular/router';\n\n" +
-                "const routes: Routes = [{\n");
+                "const routes: Routes = [\n");
         classLines.add(routing.pathToComponent.entrySet().stream()
                 .map(pathToComponent -> {
                     return "  {\n" +
@@ -214,7 +214,7 @@ public class TypeScriptFileGenerationServiceImpl {
                             "  }";
                 }).collect(Collectors.joining(",\n")));
         classLines.add(
-                "}];\n\n" +
+                "];\n\n" +
                         "@NgModule({\n" +
                         "  imports: [\n" +
                         "    RouterModule.forChild(routes)\n" +
@@ -224,7 +224,7 @@ public class TypeScriptFileGenerationServiceImpl {
                         "  ]\n" +
                         "})\n" +
                         "export class " + kebabToCamelUpperFirst(routing.name) + "RoutingModule {\n" +
-                "\n" +
+                        "\n" +
                 "}");
 
         writeFile(classLines, parentDirectory + routing.name + "-routing.module.ts");
