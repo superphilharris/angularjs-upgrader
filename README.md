@@ -15,6 +15,7 @@ The angularjs-upgrader attempts to
 
 - It will not generate DTO structures for json objects fetched from your server
 - It assumes that you are using ui-bootstrap for AngularJs and ngx-bootstrap for Angular8 UI
+- It does not upgrade your scss/css files
 
 TODO:
 
@@ -23,17 +24,15 @@ TODO:
 - Get the program to accept the AngularJs-input path from the cmd line, rather than being hard-coded to the resources folder
 - Upgrade html templates
 - Extract out `ng-controller="..."` from templates
-- Allow multiple directives to reference the same template (currently they will override the previous)
+
 ## Antlr (Optional)
-Antlr is useful for debugging issues with the grammar `*.g4` files. 
-Download the Antlr jars from https://www.antlr.org/download.html
 
-`mkdir -p /c/JavaLib`
-`cp lib/*.jar /c/JavaLib`
-
-Using System Properties dialog > Environment variables > Create or append to CLASSPATH variable
+Antlr is useful for debugging issues with the grammar `*.g4` files. If you need to edit the `*.g4` files, then follow the instructions below:
+ 
+1. Download the Antlr jars from https://www.antlr.org/download.html
+2. Make a directory and put those jars into the directory `mkdir -p /c/JavaLib && cp lib/*.jar /c/JavaLib`
+3. Using System Properties dialog > Environment variables > Create or append to CLASSPATH variable
+4. Also add javac to your %Path% environment variable
 
 ![adding antlr to classpath screenshot](.readme/add-antlr-to-classpath-environment-variables.PNG "Adding antlr to classpath")
-
-Also add javac to your %Path% environment variable
 
