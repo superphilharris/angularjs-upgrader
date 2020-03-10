@@ -1,4 +1,4 @@
-package org.angularjsupgrader;
+package org.angularjsupgrader.service;
 
 import com.google.common.base.CaseFormat;
 import org.angularjsupgrader.model.typescript.*;
@@ -38,20 +38,22 @@ public class UpgradePathServiceImpl {
         libraryDependencyMap.put("toastrService", getNewDependency("ToastrService", "ngx-toastr")); // TODO: this is a custom service
     }
 
-    public TsDependency getDependency(String jsName, AbstractTsClass tsClass) {
+    public TsDependency getServiceDependency(String jsName, AbstractTsClass tsClass) {
         if (libraryDependencyMap.containsKey(jsName)) {
             return libraryDependencyMap.get(jsName);
         }
         String dependencyFileName = camelToKebab(jsName.replace("Service", ""));
-        return getNewDependency(jsName, getServicePathFromSibling(dependencyFileName, tsClass, ""));
+        return getNewDependency(jsName, getTsFilePathFromSibling(dependencyFileName, tsClass, ".service"));
     }
 
-    private String getServicePathFromSibling(String dependencyFileName, AbstractTsClass tsClass, String currentPath) {
-        String servicePath = getDependentServiceFromChildren(dependencyFileName, tsClass.parent, "./" + currentPath, tsClass);
+
+    private String getTsFilePathFromSibling(String dependencyFileName, AbstractTsClass tsClass, String tsFileSuffix) {
+        String currentPath = "";
+        String servicePath = getTsFilePathFromChildren(dependencyFileName, tsClass.parent, "./" + currentPath, tsClass, tsFileSuffix);
         if (servicePath != null) return servicePath;
 
         for (TsModule siblingModule : tsClass.parent.childModules) {
-            String path = getDependentServiceFromChildren(dependencyFileName, siblingModule, "./" + currentPath + siblingModule.name, null);
+            String path = getTsFilePathFromChildren(dependencyFileName, siblingModule, "./" + currentPath + siblingModule.name, null, tsFileSuffix);
             if (path != null) {
                 return path;
             }
@@ -63,7 +65,7 @@ public class UpgradePathServiceImpl {
             currentPath = "../" + currentPath;
             for (TsModule tsModule : parentModule.childModules) {
                 if (tsModule != currentModule) {
-                    String path = getDependentServiceFromChildren(dependencyFileName, tsModule, currentPath + tsModule.name + "/", null);
+                    String path = getTsFilePathFromChildren(dependencyFileName, tsModule, currentPath + tsModule.name + "/", null, tsFileSuffix);
                     if (path != null) return path;
                 }
             }
@@ -73,16 +75,16 @@ public class UpgradePathServiceImpl {
         return null;
     }
 
-    private String getDependentServiceFromChildren(String searchForService, TsModule moduleToLookin, String currentPath, AbstractTsClass classToExclude) {
+    private String getTsFilePathFromChildren(String searchForService, TsModule moduleToLookin, String currentPath, AbstractTsClass classToExclude, String tsFileSuffix) {
         for (TsService service : moduleToLookin.services) {
             if (service != classToExclude) {
                 if (searchForService.equals(service.name)) {
-                    return currentPath + service.name + ".service";
+                    return currentPath + service.name + tsFileSuffix;
                 }
             }
         }
         for (TsModule childModule : moduleToLookin.childModules) {
-            String path = getDependentServiceFromChildren(searchForService, childModule, currentPath + childModule.name + "/", classToExclude);
+            String path = getTsFilePathFromChildren(searchForService, childModule, currentPath + childModule.name + "/", classToExclude, tsFileSuffix);
             if (path != null) return path;
         }
         return null;

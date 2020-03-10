@@ -1,6 +1,5 @@
 package org.angularjsupgrader.service;
 
-import org.angularjsupgrader.UpgradePathServiceImpl;
 import org.angularjsupgrader.exception.UpgraderException;
 import org.angularjsupgrader.model.typescript.*;
 
@@ -265,7 +264,7 @@ public class TypeScriptFileGenerationServiceImpl {
         List<String> constructorLines = new LinkedList<>();
         constructorLines.add("\tconstructor(");
         constructorLines.add(tsClass.dependencies.stream().map((dependency) -> {
-            TsDependency tsDependency = upgradePathService.getDependency(dependency, tsClass);
+            TsDependency tsDependency = upgradePathService.getServiceDependency(dependency, tsClass);
             return "\t\tprivate " + lowerFirst(tsDependency.name) + ": " + tsDependency.name;
         }).collect(Collectors.joining(",\n")));
         constructorLines.add("\t) { }");
@@ -274,7 +273,7 @@ public class TypeScriptFileGenerationServiceImpl {
 
     private List<String> getImports(AbstractTsClass tsClass) {
         return tsClass.dependencies.stream().map((dependency) -> {
-            TsDependency tsDependency = upgradePathService.getDependency(dependency, tsClass);
+            TsDependency tsDependency = upgradePathService.getServiceDependency(dependency, tsClass);
             return "import {" + tsDependency.name + "} from '" + tsDependency.packagePath + "';";
         }).collect(Collectors.toList());
     }
