@@ -1,5 +1,6 @@
 package org.angularjsupgrader;
 
+import org.angularjsupgrader.model.UpgraderProperties;
 import org.angularjsupgrader.model.typescript.TsProgram;
 import org.angularjsupgrader.parser.JavaScriptParser;
 import org.angularjsupgrader.service.AngularModelBuilderServiceImpl;
@@ -8,16 +9,19 @@ import org.angularjsupgrader.service.ParserFacadeServiceImpl;
 import org.angularjsupgrader.service.PropertiesLoaderImpl;
 import org.angularjsupgrader.service.generation.TypeScriptGenerationServiceImpl;
 import org.angularjsupgrader.service.upgrader.AngularUpgraderImpl;
+import org.angularjsupgrader.service.upgrader.StringServiceImpl;
 
 import java.util.List;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        final UpgraderProperties upgraderProperties = (new PropertiesLoaderImpl()).getProperties();
+        final StringServiceImpl stringService = new StringServiceImpl();
         DirectoryFileListerServiceImpl directoryFileListerService = new DirectoryFileListerServiceImpl();
         ParserFacadeServiceImpl sampleFileParserService = new ParserFacadeServiceImpl();
         AngularModelBuilderServiceImpl angularModelBuilderService = new AngularModelBuilderServiceImpl();
-        TypeScriptGenerationServiceImpl typeScriptFileGenerationService = new TypeScriptGenerationServiceImpl((new PropertiesLoaderImpl()).getProperties());
-        AngularUpgraderImpl angularUpgraderService = new AngularUpgraderImpl();
+        TypeScriptGenerationServiceImpl typeScriptFileGenerationService = new TypeScriptGenerationServiceImpl(upgraderProperties, stringService);
+        AngularUpgraderImpl angularUpgraderService = new AngularUpgraderImpl(stringService);
 
         List<String> files = directoryFileListerService.listJsFilesInDirectory("examples/");
         for (String filename : files) {

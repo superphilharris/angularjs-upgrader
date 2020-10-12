@@ -4,6 +4,7 @@ import org.angularjsupgrader.exception.UpgraderException;
 import org.angularjsupgrader.model.UpgraderProperties;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.service.UpgradePathServiceImpl;
+import org.angularjsupgrader.service.upgrader.StringServiceImpl;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,9 +23,10 @@ public class TypeScriptGenerationServiceImpl {
     private final UpgradePathServiceImpl upgradePathService;
     private final HtmlGenerationServiceImpl htmlGenerationService;
 
-    public TypeScriptGenerationServiceImpl(UpgraderProperties upgraderProperties) {
+    public TypeScriptGenerationServiceImpl(UpgraderProperties upgraderProperties,
+                                           StringServiceImpl stringService) {
         this.upgradePathService = new UpgradePathServiceImpl();
-        this.htmlGenerationService = new HtmlGenerationServiceImpl(upgraderProperties);
+        this.htmlGenerationService = new HtmlGenerationServiceImpl(upgraderProperties, stringService);
     }
 
 

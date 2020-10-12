@@ -21,8 +21,8 @@ public class AngularUpgraderImpl {
     private final StringServiceImpl stringService;
     private final AngularLocatorImpl angularLocator;
 
-    public AngularUpgraderImpl() {
-        this.stringService = new StringServiceImpl();
+    public AngularUpgraderImpl(StringServiceImpl stringService) {
+        this.stringService = stringService;
         this.angularLocator = new AngularLocatorImpl();
         this.injectableUpgrader = new AngularInjectableUpgraderImpl(angularLocator, stringService);
         this.componentExtractor = new ComponentExtractorImpl(injectableUpgrader, angularLocator, stringService);
