@@ -10,11 +10,11 @@ import java.util.Properties;
 /**
  * Created by Philip Harris on 13/10/2020
  */
-public class PropertiesLoaderServiceImpl {
+public class PropertiesLoaderImpl {
 
     private UpgraderProperties properties = null;
 
-    public PropertiesLoaderServiceImpl() {
+    public PropertiesLoaderImpl() {
 
     }
 

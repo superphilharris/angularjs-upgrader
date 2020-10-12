@@ -1,8 +1,9 @@
-package org.angularjsupgrader.service;
+package org.angularjsupgrader.service.generation;
 
 import org.angularjsupgrader.exception.UpgraderException;
 import org.angularjsupgrader.model.UpgraderProperties;
 import org.angularjsupgrader.model.typescript.*;
+import org.angularjsupgrader.service.UpgradePathServiceImpl;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,14 +17,14 @@ import java.util.stream.Collectors;
 /**
  * Created by Philip Harris on 18/01/2020
  */
-public class TypeScriptFileGenerationServiceImpl {
+public class TypeScriptGenerationServiceImpl {
 
     private final UpgradePathServiceImpl upgradePathService;
-    private final UpgraderProperties upgraderProperties;
+    private final HtmlGenerationServiceImpl htmlGenerationService;
 
-    public TypeScriptFileGenerationServiceImpl(UpgraderProperties upgraderProperties) {
+    public TypeScriptGenerationServiceImpl(UpgraderProperties upgraderProperties) {
         this.upgradePathService = new UpgradePathServiceImpl();
-        this.upgraderProperties = upgraderProperties;
+        this.htmlGenerationService = new HtmlGenerationServiceImpl(upgraderProperties);
     }
 
 
@@ -86,8 +87,7 @@ public class TypeScriptFileGenerationServiceImpl {
         if (component.template != null) {
             templateLines.add(component.template);
         } else if (component.templateUrl != null) {
-            final String templateRootUrl = upgraderProperties.getTemplateRootVariable();
-            templateLines.add("<ng-container *ngTemplateOutlet=\"" + component.templateUrl + "\"></ng-container>"); // TODO: get the syntax correct
+            templateLines.addAll(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
         } else {
             templateLines.add("<p>" + component.name + " works!</p>");
         }
