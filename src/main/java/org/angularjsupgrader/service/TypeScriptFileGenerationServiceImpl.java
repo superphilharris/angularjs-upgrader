@@ -92,7 +92,7 @@ public class TypeScriptFileGenerationServiceImpl {
         // Controller
         List<String> controllerLines = new LinkedList<>();
         controllerLines.add("import {Component, OnInit} from '@angular/core';");
-        controllerLines.addAll(getImports(component));
+        controllerLines.addAll(getServiceImports(component));
         controllerLines.add(
                 "\n" +
                         "@Component({\n" +
@@ -157,7 +157,7 @@ public class TypeScriptFileGenerationServiceImpl {
         List<String> serviceLines = new LinkedList<>();
         serviceLines.add("import {Injectable} from '@angular/core';\n" +
                 "import {Observable} from 'rxjs';");
-        serviceLines.addAll(getImports(service));
+        serviceLines.addAll(getServiceImports(service));
         serviceLines.add("\n\n@Injectable({\n" +
                 "\tprovidedIn: 'root'\n" +
                 "})\n" +
@@ -201,17 +201,24 @@ public class TypeScriptFileGenerationServiceImpl {
     }
 
     private void generateRouting(TsRouting routing, String parentDirectory) throws UpgraderException {
+        if (routing.pathToComponent.isEmpty() && routing.initialization.isEmpty()) {
+            return;
+        }
+
         List<String> classLines = new LinkedList<>();
         classLines.add("import {NgModule} from '@angular/core';\n" +
-                "import {RouterModule, Routes} from '@angular/router';\n\n" +
-                "const routes: Routes = [");
+                "import {RouterModule, Routes} from '@angular/router';");
+        classLines.addAll(
+                routing.pathToComponent.values().stream().map(component -> {
+                    TsDependency dependency = upgradePathService.getComponentDependency(component.name, routing);
+                    return "import {" + kebabToCamelUpperFirst(component.name) + "Component} from '" + dependency.packagePath + ';';
+                }).collect(Collectors.toList()));
+        classLines.add("\nconst routes: Routes = [");
         classLines.add(routing.pathToComponent.entrySet().stream()
-                .map(pathToComponent -> {
-                    return "  {\n" +
-                            "    path: " + pathToComponent.getKey() + ",\n" +
-                            "    component: " + kebabToCamelUpperFirst(pathToComponent.getValue().name) + "Component,\n" +
-                            "  }";
-                }).collect(Collectors.joining(",\n")));
+                .map(pathToComponent -> "  {\n" +
+                        "    path: " + pathToComponent.getKey() + ",\n" +
+                        "    component: " + kebabToCamelUpperFirst(pathToComponent.getValue().name) + "Component,\n" +
+                        "  }").collect(Collectors.joining(",\n")));
         classLines.add(
                 "];\n\n" +
                         "@NgModule({\n" +
@@ -271,7 +278,7 @@ public class TypeScriptFileGenerationServiceImpl {
         return constructorLines;
     }
 
-    private List<String> getImports(AbstractTsClass tsClass) {
+    private List<String> getServiceImports(AbstractTsClass tsClass) {
         return tsClass.dependencies.stream().map((dependency) -> {
             TsDependency tsDependency = upgradePathService.getServiceDependency(dependency, tsClass);
             return "import {" + tsDependency.name + "} from '" + tsDependency.packagePath + "';";

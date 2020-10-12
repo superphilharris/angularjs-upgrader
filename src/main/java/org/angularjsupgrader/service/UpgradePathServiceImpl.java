@@ -38,34 +38,37 @@ public class UpgradePathServiceImpl {
         libraryDependencyMap.put("toastrService", getNewDependency("ToastrService", "ngx-toastr")); // TODO: this is a custom service
     }
 
-    public TsDependency getServiceDependency(String jsName, AbstractTsClass tsClass) {
+    public TsDependency getServiceDependency(String jsName, AbstractTsClass classToLookFrom) {
         if (libraryDependencyMap.containsKey(jsName)) {
             return libraryDependencyMap.get(jsName);
         }
         String dependencyFileName = camelToKebab(jsName.replace("Service", ""));
-        return getNewDependency(jsName, getTsFilePathFromSibling(dependencyFileName, tsClass, ".service"));
+        return getNewDependency(jsName, getTsFilePathFromSibling(dependencyFileName, classToLookFrom, TsClassType.SERVICE));
     }
 
+    public TsDependency getComponentDependency(String tsComponentName, AbstractTsClass classToLookFrom) {
+        return getNewDependency(tsComponentName, getTsFilePathFromSibling(tsComponentName, classToLookFrom, TsClassType.COMPONENT));
+    }
 
-    private String getTsFilePathFromSibling(String dependencyFileName, AbstractTsClass tsClass, String tsFileSuffix) {
+    private String getTsFilePathFromSibling(String searchForDependencyName, AbstractTsClass classToLookFrom, TsClassType classType) {
         String currentPath = "";
-        String servicePath = getTsFilePathFromChildren(dependencyFileName, tsClass.parent, "./" + currentPath, tsClass, tsFileSuffix);
-        if (servicePath != null) return servicePath;
+        String foundDependencyPath = getTsFilePathFromChildren(searchForDependencyName, classToLookFrom.parent, "./" + currentPath, classToLookFrom, classType);
+        if (foundDependencyPath != null) return foundDependencyPath;
 
-        for (TsModule siblingModule : tsClass.parent.childModules) {
-            String path = getTsFilePathFromChildren(dependencyFileName, siblingModule, "./" + currentPath + siblingModule.name, null, tsFileSuffix);
+        for (TsModule siblingModule : classToLookFrom.parent.childModules) {
+            String path = getTsFilePathFromChildren(searchForDependencyName, siblingModule, "./" + currentPath + siblingModule.name, null, classType);
             if (path != null) {
                 return path;
             }
         }
 
-        AbstractTsModule parentModule = tsClass.parent.parent;
-        TsModule currentModule = tsClass.parent;
+        AbstractTsModule parentModule = classToLookFrom.parent.parent;
+        TsModule currentModule = classToLookFrom.parent;
         while (parentModule instanceof TsModule) {
             currentPath = "../" + currentPath;
             for (TsModule tsModule : parentModule.childModules) {
                 if (tsModule != currentModule) {
-                    String path = getTsFilePathFromChildren(dependencyFileName, tsModule, currentPath + tsModule.name + "/", null, tsFileSuffix);
+                    String path = getTsFilePathFromChildren(searchForDependencyName, tsModule, currentPath + tsModule.name + "/", null, classType);
                     if (path != null) return path;
                 }
             }
@@ -75,16 +78,22 @@ public class UpgradePathServiceImpl {
         return null;
     }
 
-    private String getTsFilePathFromChildren(String searchForService, TsModule moduleToLookin, String currentPath, AbstractTsClass classToExclude, String tsFileSuffix) {
-        for (TsService service : moduleToLookin.services) {
-            if (service != classToExclude) {
-                if (searchForService.equals(service.name)) {
-                    return currentPath + service.name + tsFileSuffix;
+    private String getTsFilePathFromChildren(String searchForDependencyName, TsModule moduleToLookin, String currentPath, AbstractTsClass classToExclude, TsClassType classType) {
+        if (classType.equals(TsClassType.SERVICE)) {
+            for (TsService service : moduleToLookin.services) {
+                if (service != classToExclude && searchForDependencyName.equals(service.name)) {
+                    return currentPath + service.name + classType.getFileSuffix();
+                }
+            }
+        } else if (classType.equals(TsClassType.COMPONENT)) {
+            for (TsComponent component : moduleToLookin.components) {
+                if (component != classToExclude && searchForDependencyName.equals(component.name)) {
+                    return currentPath + component.name + "/" + component.name + classType.getFileSuffix();
                 }
             }
         }
         for (TsModule childModule : moduleToLookin.childModules) {
-            String path = getTsFilePathFromChildren(searchForService, childModule, currentPath + childModule.name + "/", classToExclude, tsFileSuffix);
+            String path = getTsFilePathFromChildren(searchForDependencyName, childModule, currentPath + childModule.name + "/", classToExclude, classType);
             if (path != null) return path;
         }
         return null;
