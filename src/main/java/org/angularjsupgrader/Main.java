@@ -2,10 +2,7 @@ package org.angularjsupgrader;
 
 import org.angularjsupgrader.model.typescript.TsProgram;
 import org.angularjsupgrader.parser.JavaScriptParser;
-import org.angularjsupgrader.service.AngularModelBuilderServiceImpl;
-import org.angularjsupgrader.service.DirectoryFileListerServiceImpl;
-import org.angularjsupgrader.service.ParserFacadeServiceImpl;
-import org.angularjsupgrader.service.TypeScriptFileGenerationServiceImpl;
+import org.angularjsupgrader.service.*;
 import org.angularjsupgrader.service.upgrader.AngularUpgraderImpl;
 
 import java.util.List;
@@ -15,7 +12,7 @@ public class Main {
         DirectoryFileListerServiceImpl directoryFileListerService = new DirectoryFileListerServiceImpl();
         ParserFacadeServiceImpl sampleFileParserService = new ParserFacadeServiceImpl();
         AngularModelBuilderServiceImpl angularModelBuilderService = new AngularModelBuilderServiceImpl();
-        TypeScriptFileGenerationServiceImpl typeScriptFileGenerationService = new TypeScriptFileGenerationServiceImpl();
+        TypeScriptFileGenerationServiceImpl typeScriptFileGenerationService = new TypeScriptFileGenerationServiceImpl((new PropertiesLoaderServiceImpl()).getProperties());
         AngularUpgraderImpl angularUpgraderService = new AngularUpgraderImpl();
 
         List<String> files = directoryFileListerService.listJsFilesInDirectory("examples/");

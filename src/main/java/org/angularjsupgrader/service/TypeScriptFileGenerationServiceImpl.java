@@ -1,6 +1,7 @@
 package org.angularjsupgrader.service;
 
 import org.angularjsupgrader.exception.UpgraderException;
+import org.angularjsupgrader.model.UpgraderProperties;
 import org.angularjsupgrader.model.typescript.*;
 
 import java.io.IOException;
@@ -18,9 +19,11 @@ import java.util.stream.Collectors;
 public class TypeScriptFileGenerationServiceImpl {
 
     private final UpgradePathServiceImpl upgradePathService;
+    private final UpgraderProperties upgraderProperties;
 
-    public TypeScriptFileGenerationServiceImpl() {
+    public TypeScriptFileGenerationServiceImpl(UpgraderProperties upgraderProperties) {
         this.upgradePathService = new UpgradePathServiceImpl();
+        this.upgraderProperties = upgraderProperties;
     }
 
 
@@ -83,6 +86,7 @@ public class TypeScriptFileGenerationServiceImpl {
         if (component.template != null) {
             templateLines.add(component.template);
         } else if (component.templateUrl != null) {
+            final String templateRootUrl = upgraderProperties.getTemplateRootVariable();
             templateLines.add("<ng-container *ngTemplateOutlet=\"" + component.templateUrl + "\"></ng-container>"); // TODO: get the syntax correct
         } else {
             templateLines.add("<p>" + component.name + " works!</p>");
