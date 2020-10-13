@@ -4,6 +4,7 @@ import org.angularjsupgrader.exception.UpgraderException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -13,11 +14,11 @@ import java.util.stream.Stream;
 /**
  * Created by Philip Harris on 22/01/2020
  */
-public class DirectoryFileListerServiceImpl {
+public class FileListerServiceImpl {
 
     public List<String> listJsFilesInDirectory(final String directory) throws UpgraderException {
-        String directoryPath = getClass().getClassLoader().getResource(directory).getPath();
-        File folder = new File(directoryPath);
+        final String directoryPath = getClass().getClassLoader().getResource(directory).getPath();
+        final File folder = new File(directoryPath);
 
         try (Stream<Path> paths = Files.walk(folder.toPath())) {
             return paths.map(Path::toString)
@@ -30,6 +31,11 @@ public class DirectoryFileListerServiceImpl {
         } catch (IOException e) {
             throw new UpgraderException(e);
         }
+    }
+
+    public String getFileMatchingPath(String filename) {
+        URL url = getClass().getClassLoader().getResource(filename);
+        return url.getPath();
     }
 
 }
