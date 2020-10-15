@@ -11,6 +11,10 @@ public class UpgraderException extends Exception {
         super(e);
     }
 
+    public UpgraderException(String msg, Exception e) {
+        super(msg, e);
+    }
+
     public UpgraderException(String msg) {
         super(msg);
     }
