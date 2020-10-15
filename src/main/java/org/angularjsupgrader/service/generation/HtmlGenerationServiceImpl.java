@@ -30,8 +30,15 @@ public class HtmlGenerationServiceImpl {
             System.err.println("'" + parsedTemplateUrl + "' does not exist for template");
             return "<ng-container *ngTemplateOutlet=\"" + parsedTemplateUrl + "\"></ng-container>";
         } else {
-            return templateContents;
+            return replaceAngularJsWithAngular(templateContents);
         }
+    }
+
+    private String replaceAngularJsWithAngular(final String templateContent) {
+        return templateContent
+                .replace(" ng-if=", " *ngIf=")
+                .replace(" ng-click=", " (click)=")
+                .replace(" ng-href=", " [href]=");
     }
 
     private String removeRootVariable(final String templateUrl) {

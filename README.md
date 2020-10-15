@@ -7,7 +7,7 @@ The angularjs-upgrader attempts to
 
 1. Install Java 8 JDK
 2. `cd angularjs-upgrader/ && ./gradlew generateGrammarSource`
-3. Copy your AngularJs into `src/main/resources/`
+3. Copy your AngularJs into `src/main/resources/angularJsToUpgrade`
 4. `java -cp ./build/libs/angularjs-upgrader.jar ...? org.angularjsupgrader.Main`
 5. Upgraded files should be in `angularjs-upgrader/upgradedAngular`
 
