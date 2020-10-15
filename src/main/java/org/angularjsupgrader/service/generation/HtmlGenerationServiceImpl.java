@@ -38,6 +38,9 @@ public class HtmlGenerationServiceImpl {
         return templateContent
                 .replace(" ng-if=", " *ngIf=")
                 .replace(" ng-click=", " (click)=")
+                .replace(" ng-class=", " [ngClass]=")
+                .replace(" ng-disabled=", " [disabled]=")
+                .replace(" ng-model=", " [(ngModel)]=")
                 .replace(" ng-href=", " [href]=");
     }
 
