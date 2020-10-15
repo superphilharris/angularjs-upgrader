@@ -91,7 +91,7 @@ public class TypeScriptGenerationServiceImpl {
         if (component.template != null) {
             templateLines.add(component.template);
         } else if (component.templateUrl != null) {
-            templateLines.addAll(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
+            templateLines.add(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
         } else {
             templateLines.add("<p>" + component.name + " works!</p>");
         }

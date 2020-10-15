@@ -1,7 +1,6 @@
 package org.angularjsupgrader.service;
 
 import org.angularjsupgrader.exception.UpgraderException;
-import org.angularjsupgrader.model.UpgradeProperties;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,7 +43,7 @@ public class FileListerServiceImpl {
     public String getFileMatchingPath(String filename) throws UpgraderException {
         final URL resource = getClass().getClassLoader().getResource(filename);
         if (resource == null) {
-            System.out.println("ERROR: could not find '" + filename + "' in resources folder. Did you set the " + UpgradeProperties.TEMPLATE_PUBLIC_URL_ROOT_PROPERTY + " property in resources/application.properties?");
+            System.out.println("ERROR: could not find '" + filename + "' in resources folder.");
             return null;
         }
         try {
