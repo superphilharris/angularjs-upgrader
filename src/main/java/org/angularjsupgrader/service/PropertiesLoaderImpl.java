@@ -1,7 +1,7 @@
 package org.angularjsupgrader.service;
 
 import org.angularjsupgrader.exception.UpgraderException;
-import org.angularjsupgrader.model.UpgraderProperties;
+import org.angularjsupgrader.model.UpgradeProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,14 +12,14 @@ import java.util.Properties;
  */
 public class PropertiesLoaderImpl {
 
-    private UpgraderProperties properties = null;
+    private UpgradeProperties properties = null;
 
     public PropertiesLoaderImpl() {
 
     }
 
 
-    public UpgraderProperties getProperties() throws UpgraderException {
+    public UpgradeProperties getProperties() throws UpgraderException {
         if (this.properties != null) {
             return this.properties;
         }
@@ -31,7 +31,7 @@ public class PropertiesLoaderImpl {
             } else {
                 System.out.println("WARN: no 'application.properties' file in the resources folder");
             }
-            this.properties = new UpgraderProperties(properties);
+            this.properties = new UpgradeProperties(properties);
             return this.properties;
         } catch (IOException e) {
             throw new UpgraderException(e);

@@ -1,13 +1,14 @@
 package org.angularjsupgrader.service;
 
 import org.angularjsupgrader.exception.UpgraderException;
-import org.angularjsupgrader.model.UpgraderProperties;
+import org.angularjsupgrader.model.UpgradeProperties;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -18,7 +19,13 @@ import java.util.stream.Stream;
 public class FileListerServiceImpl {
 
     public List<String> listJsFilesInDirectory(final String directory) throws UpgraderException {
-        final String directoryPath = getClass().getClassLoader().getResource(directory).getPath();
+        final URL directoryUrl = getClass().getClassLoader().getResource(directory);
+        if (directoryUrl == null) {
+            System.err.println("'" + directory + "' does not exist.\nPlease move your angularjs project into this directory");
+            return new LinkedList<>();
+        }
+
+        final String directoryPath = directoryUrl.getPath();
         final File folder = new File(directoryPath);
 
         try (Stream<Path> paths = Files.walk(folder.toPath())) {
@@ -37,7 +44,7 @@ public class FileListerServiceImpl {
     public String getFileMatchingPath(String filename) throws UpgraderException {
         final URL resource = getClass().getClassLoader().getResource(filename);
         if (resource == null) {
-            System.out.println("ERROR: could not find '" + filename + "' in resources folder. Did you set the " + UpgraderProperties.TEMPLATE_PUBLIC_URL_ROOT_PROPERTY + " property in resources/application.properties?");
+            System.out.println("ERROR: could not find '" + filename + "' in resources folder. Did you set the " + UpgradeProperties.TEMPLATE_PUBLIC_URL_ROOT_PROPERTY + " property in resources/application.properties?");
             return null;
         }
         try {

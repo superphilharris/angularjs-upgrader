@@ -208,7 +208,7 @@ public class AngularJsParserVisitor
 
     @Override
     public Object visitMemberDotExpression(JavaScriptParser.MemberDotExpressionContext ctx) {
-        if ("$inject".equals(ctx.getChild(2).getText()) && ctx.parent.getChildCount() >= 3) {
+        if (ctx.getChild(2) != null && "$inject".equals(ctx.getChild(2).getText()) && ctx.parent.getChildCount() >= 3) {
             JsInjectStatement injectStatement = new JsInjectStatement();
             injectStatement.functionName = ctx.getChild(0).getText();
 

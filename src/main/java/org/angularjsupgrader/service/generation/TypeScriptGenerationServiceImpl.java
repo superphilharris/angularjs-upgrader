@@ -1,7 +1,7 @@
 package org.angularjsupgrader.service.generation;
 
 import org.angularjsupgrader.exception.UpgraderException;
-import org.angularjsupgrader.model.UpgraderProperties;
+import org.angularjsupgrader.model.UpgradeProperties;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.service.FileListerServiceImpl;
 import org.angularjsupgrader.service.UpgradePathServiceImpl;
@@ -24,11 +24,11 @@ public class TypeScriptGenerationServiceImpl {
     private final UpgradePathServiceImpl upgradePathService;
     private final HtmlGenerationServiceImpl htmlGenerationService;
 
-    public TypeScriptGenerationServiceImpl(UpgraderProperties upgraderProperties,
+    public TypeScriptGenerationServiceImpl(UpgradeProperties upgradeProperties,
                                            StringServiceImpl stringService,
                                            FileListerServiceImpl fileListerService) {
         this.upgradePathService = new UpgradePathServiceImpl();
-        this.htmlGenerationService = new HtmlGenerationServiceImpl(upgraderProperties, stringService, fileListerService);
+        this.htmlGenerationService = new HtmlGenerationServiceImpl(upgradeProperties, stringService, fileListerService);
     }
 
 

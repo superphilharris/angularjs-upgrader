@@ -1,6 +1,8 @@
 generated-src
-src/main/resources/examples/*
+src/main/resources/angularJsToUpgrade/*
 upgradedAngular
+/src/main/resources/application.properties
+
 
 # Created by https://www.gitignore.io/api/java,gradle,intellij
 # Edit at https://www.gitignore.io/?templates=java,gradle,intellij
@@ -140,5 +142,4 @@ gradle-app.setting
 # End of https://www.gitignore.io/api/java,gradle,intellij
 
 
-resources/application.properties
-/src/main/resources/application.properties
+
