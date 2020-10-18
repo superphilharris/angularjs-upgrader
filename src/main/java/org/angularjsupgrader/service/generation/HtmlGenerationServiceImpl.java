@@ -41,7 +41,8 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-class=", " [ngClass]=")
                 .replace(" ng-disabled=", " [disabled]=")
                 .replace(" ng-model=", " [(ngModel)]=")
-                .replace(" ng-href=", " [href]=");
+                .replace(" ng-href=", " [href]=")
+                .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
     }
 
     private String removeRootVariable(final String templateUrl) {
