@@ -43,7 +43,7 @@ public class FileListerServiceImpl {
     public String getFileMatchingPath(String filename) throws UpgraderException {
         final URL resource = getClass().getClassLoader().getResource(filename);
         if (resource == null) {
-            System.out.println("ERROR: could not find '" + filename + "' in resources folder.");
+            System.err.println("could not find '" + filename + "' in resources folder.");
             return null;
         }
         try {
