@@ -49,7 +49,7 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-switch=", " [ngSwitch]=")
                 .replace(" ng-switch-when=", " *ngSwitchCase=")
                 .replace(" ng-switch-default", " *ngSwitchDefault")
-//                .replace(" ng-change=", " (change)=")
+                .replace(" ng-change=", " (change)=")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
     }
 
