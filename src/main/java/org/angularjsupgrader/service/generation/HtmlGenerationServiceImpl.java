@@ -5,6 +5,9 @@ import org.angularjsupgrader.model.UpgradeProperties;
 import org.angularjsupgrader.service.FileListerServiceImpl;
 import org.angularjsupgrader.service.upgrader.StringServiceImpl;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Created by Philip Harris on 13/10/2020
  */
@@ -39,6 +42,7 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-if=", " *ngIf=")
                 .replace(" ng-click=", " (click)=")
                 .replace(" ng-class=", " [ngClass]=")
+                .replace(" ng-style=", " [ngStyle]=")
                 .replace(" ng-disabled=", " [disabled]=")
                 .replace(" ng-model=", " [(ngModel)]=")
                 .replace(" ng-href=", " [href]=")
@@ -51,7 +55,16 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-switch-default", " *ngSwitchDefault")
                 .replace(" ng-change=", " (change)=")
                 .replace(" ng-bind=", " [textContent]=")
+                .replaceAll(" ng-repeat=\"([a-zA-Z]*) in ", " *ngFor=\"let $1 of ")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
+    }
+
+    private Map<String, String> getOldToNewAttributeWarnings() {
+        final Map<String, String> oldToWarnings = new HashMap<>();
+        oldToWarnings.put("ng-options", "*ngFor with looping through option elements");
+        oldToWarnings.put("ng-show", "*ngIf except it doesn't initialize child components");
+        oldToWarnings.put("ng-include", "need to create components for included files");
+        return oldToWarnings;
     }
 
     private String removeRootVariable(final String templateUrl) {
