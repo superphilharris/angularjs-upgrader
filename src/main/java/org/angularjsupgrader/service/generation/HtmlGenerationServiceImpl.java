@@ -43,7 +43,9 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-model=", " [(ngModel)]=")
                 .replace(" ng-href=", " [href]=")
                 .replace(" ng-bind-html=", " [innerHtml]=") // Both ng-bind-html and innerHtml sanitize the html by stripping out any inline styles
-                //.replace(" ng-mouseenter", " (mouseenter)=")
+                .replace(" ng-mouseenter=", " (mouseenter)=")
+                .replace(" ng-mouseleave=", " (mouseleave)=")
+                .replace(" ng-mouseover=", " (mouseover)=")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
     }
 
