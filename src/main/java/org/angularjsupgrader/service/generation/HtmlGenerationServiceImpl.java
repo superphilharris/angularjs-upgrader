@@ -46,6 +46,10 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-mouseenter=", " (mouseenter)=")
                 .replace(" ng-mouseleave=", " (mouseleave)=")
                 .replace(" ng-mouseover=", " (mouseover)=")
+                .replace(" ng-switch=", " [ngSwitch]=")
+                .replace(" ng-switch-when=", " *ngSwitchCase=")
+                .replace(" ng-switch-default", " *ngSwitchDefault")
+//                .replace(" ng-change=", " (change)=")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
     }
 
