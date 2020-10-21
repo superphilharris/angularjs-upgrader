@@ -40,6 +40,9 @@ public class HtmlGenerationServiceImpl {
     private String replaceAngularJsWithAngular(final String templateContent) {
         return templateContent
                 .replace(" ng-if=", " *ngIf=")
+                .replace(" ng-show=", " *ngIf=")
+                .replace(" ng-hide=\"!", " *ngIf=\"")
+                .replace(" ng-hide=\"", " *ngIf=\"!")
                 .replace(" ng-click=", " (click)=")
                 .replace(" ng-class=", " [ngClass]=")
                 .replace(" ng-style=", " [ngStyle]=")
@@ -63,7 +66,8 @@ public class HtmlGenerationServiceImpl {
     private Map<String, String> getOldToNewAttributeWarnings() {
         final Map<String, String> oldToWarnings = new HashMap<>();
         oldToWarnings.put("ng-options", "*ngFor with looping through option elements");
-        oldToWarnings.put("ng-show", "*ngIf except it doesn't initialize embedded components, whereas ng-show does");
+        //oldToWarnings.put("ng-show", "*ngIf except ngIf doesn't initialize embedded components, whereas ng-show does");
+        //oldToWarnings.put("ng-hide", "*ngIf=\"!...\", except that ngIf doesn't initialize embedded components, whereas ng-hide does");
         oldToWarnings.put("ng-include", "need to create components for included files");
         oldToWarnings.put("ng-transclude", "use <ng-container></ng-container> or separate component with element (not attribute) selector");
         return oldToWarnings;
