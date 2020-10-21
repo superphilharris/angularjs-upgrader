@@ -45,6 +45,7 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-style=", " [ngStyle]=")
                 .replace(" ng-disabled=", " [disabled]=")
                 .replace(" ng-model=", " [(ngModel)]=")
+                .replace(" ng-src=", " src=")
                 .replace(" ng-href=", " [href]=")
                 .replace(" ng-bind-html=", " [innerHtml]=") // Both ng-bind-html and innerHtml sanitize the html by stripping out any inline styles
                 .replace(" ng-mouseenter=", " (mouseenter)=")
@@ -62,8 +63,9 @@ public class HtmlGenerationServiceImpl {
     private Map<String, String> getOldToNewAttributeWarnings() {
         final Map<String, String> oldToWarnings = new HashMap<>();
         oldToWarnings.put("ng-options", "*ngFor with looping through option elements");
-        oldToWarnings.put("ng-show", "*ngIf except it doesn't initialize child components");
+        oldToWarnings.put("ng-show", "*ngIf except it doesn't initialize embedded components, whereas ng-show does");
         oldToWarnings.put("ng-include", "need to create components for included files");
+        oldToWarnings.put("ng-transclude", "use <ng-container></ng-container> or separate component with element (not attribute) selector");
         return oldToWarnings;
     }
 
