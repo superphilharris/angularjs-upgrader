@@ -37,17 +37,18 @@ public class HtmlGenerationServiceImpl {
         }
     }
 
-    private String replaceAngularJsWithAngular(final String templateContent) {
+    private String replaceAngularJsWithAngular(String templateContent) {
+        templateContent = replaceAttribute(templateContent, "ng\\-if", "*ngIf");
+        templateContent = replaceAttribute(templateContent, "ng\\-show", "*ngIf");
+        templateContent = replaceAttribute(templateContent, "ng\\-click", "(click)");
+        templateContent = replaceAttribute(templateContent, "ng\\-class", "[ngClass]");
+        templateContent = replaceAttribute(templateContent, "ng\\-style", "[ngStyle]");
+        templateContent = replaceAttribute(templateContent, "ng\\-disabled", "[disabled]");
+        templateContent = replaceAttribute(templateContent, "ng\\-model", "[(ngModel)]");
+
         return templateContent
-                .replace(" ng-if=", " *ngIf=")
-                .replace(" ng-show=", " *ngIf=")
                 .replace(" ng-hide=\"!", " *ngIf=\"")
                 .replace(" ng-hide=\"", " *ngIf=\"!")
-                .replace(" ng-click=", " (click)=")
-                .replace(" ng-class=", " [ngClass]=")
-                .replace(" ng-style=", " [ngStyle]=")
-                .replace(" ng-disabled=", " [disabled]=")
-                .replace(" ng-model=", " [(ngModel)]=")
                 .replace(" ng-src=", " src=")
                 .replace(" ng-href=", " [href]=")
                 .replace(" ng-bind-html=", " [innerHtml]=") // Both ng-bind-html and innerHtml sanitize the html by stripping out any inline styles
@@ -61,6 +62,10 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-bind=", " [textContent]=")
                 .replaceAll(" ng-repeat=\"([a-zA-Z]*) in ", " *ngFor=\"let $1 of ")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
+    }
+
+    private String replaceAttribute(String template, final String oldAttribute, final String newAttribute) {
+        return template.replaceAll("(\\s)" + oldAttribute + "=", "$1" + newAttribute + "=");
     }
 
     private Map<String, String> getOldToNewAttributeWarnings() {
