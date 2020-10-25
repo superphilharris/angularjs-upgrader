@@ -26,12 +26,13 @@ public class HtmlGenerationServiceImpl {
     }
 
     public String upgradeTemplateUrl(final String templateUrl) throws UpgraderException {
-        final String parsedTemplateUrl = upgradeProperties.getInputFolder() + removeResourcesPrefix(stringService.trimQuotes(removeRootVariable(templateUrl)));
+        final String templateUrlWithRootRemoved = stringService.trimQuotes(removeRootVariable(templateUrl));
+        final String parsedTemplateUrl = upgradeProperties.getInputFolder() + removeResourcesPrefix(templateUrlWithRootRemoved);
         final String templateContents = fileListerService.getFileMatchingPath(parsedTemplateUrl);
 
         if (templateContents == null) {
             System.err.println("'" + parsedTemplateUrl + "' does not exist for template");
-            return "<ng-container *ngTemplateOutlet=\"" + parsedTemplateUrl + "\"></ng-container>";
+            return "<!-- UPGRADE NOTES: Could not find file for path:'" + templateUrlWithRootRemoved + "'.\nPossibly it is embedded inside another file with the syntax:\n <script type=\"text/ng-template\" id=\"" + templateUrlWithRootRemoved + "\"...\n-->";
         } else {
             return replaceAngularJsWithAngular(templateContents);
         }
