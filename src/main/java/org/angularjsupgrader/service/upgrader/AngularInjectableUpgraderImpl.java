@@ -53,7 +53,7 @@ public class AngularInjectableUpgraderImpl {
         return tsClass;
     }
 
-    private TsStatement upgradeJsStatement(JsStatementBranch jsStatement) {
+    public TsStatement upgradeJsStatement(JsStatementBranch jsStatement) {
         TsStatement tsStatement = new TsStatement();
         tsStatement.text = jsStatement.toString(); // TODO: switch out old dependencies for new dependencies
         return tsStatement;

@@ -1,6 +1,7 @@
 package org.angularjsupgrader.service.generation;
 
 import org.angularjsupgrader.exception.UpgraderException;
+import org.angularjsupgrader.model.AbstractComponent;
 import org.angularjsupgrader.model.UpgradeProperties;
 import org.angularjsupgrader.model.typescript.*;
 import org.angularjsupgrader.service.FileListerServiceImpl;
@@ -93,12 +94,16 @@ public class TypeScriptGenerationServiceImpl {
         } else if (component.templateUrl != null) {
             templateLines.add(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
         } else {
-            templateLines.add("<p>" + component.name + " works!</p>");
+            if (component.controllerSourcedFrom != null) {
+                templateLines.add("<!-- UPGRADE ERROR: Could not find a template for controller function:'" + component.controllerSourcedFrom.functionName + "' -->");
+            } else {
+                templateLines.add("<p>" + component.name + " works!</p>");
+            }
         }
         writeFile(templateLines, directory + component.name + ".component.html");
 
         // Controller
-        List<String> controllerLines = new LinkedList<>();
+        final List<String> controllerLines = new LinkedList<>();
         controllerLines.add("import {Component, OnInit} from '@angular/core';");
         controllerLines.addAll(getServiceImports(component));
         controllerLines.add(
