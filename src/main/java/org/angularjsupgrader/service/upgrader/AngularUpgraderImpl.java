@@ -82,6 +82,10 @@ public class AngularUpgraderImpl {
 
     private TsComponent upgradeJsDirective(JsDirective jsDirective, TsModule tsModule, TsProgram tsProgram) {
         TsComponent tsComponent = upgradeComponent(jsDirective, tsModule, tsProgram, jsDirective.originalInjectable.injectableName);
+        if (jsDirective.linkFunction != null) {
+            // TODO: this link function could be an inline injectable
+            tsComponent.initialization.addFirst(injectableUpgrader.upgradeJsStatement(jsDirective.linkFunction));
+        }
         // TODO: upgrade our jsDirective-specific stuff here
         return tsComponent;
     }
@@ -101,6 +105,11 @@ public class AngularUpgraderImpl {
             } else { // There was no controller, so lets generate one from the template name
                 tsComponent = new TsComponent();
                 tsComponent.name = stringService.camelToKebab(componentName);
+                if (jsComponent.controllerInjectedName != null) {
+                    tsComponent.upgradeErrors.add("could not find a controller with the injected name:'" + jsComponent.controllerInjectedName + "'");
+                } else {
+                    tsComponent.upgradeErrors.add("Blah");
+                }
             }
             tsModule.components.add(tsComponent);
         }
