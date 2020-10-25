@@ -5,6 +5,8 @@ import org.angularjsupgrader.model.angularjs.JsStatementBranch;
 import org.angularjsupgrader.model.typescript.TsComponent;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -19,4 +21,5 @@ public abstract class AbstractComponent {
     public String controllerFunctionName;
     public String controllerInjectedName;
     public Map<String, JsStatementBranch> resolve = new HashMap<>();
+    public List<String> upgradeErrors = new LinkedList<>();
 }

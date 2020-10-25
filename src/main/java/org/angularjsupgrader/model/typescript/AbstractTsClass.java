@@ -12,6 +12,7 @@ public abstract class AbstractTsClass {
     public List<String> dependencies = new LinkedList<>();
     public TsModule parent = null;
     public List<TsStatement> initialization = new LinkedList<>();
+    public List<String> upgradeErrors = new LinkedList<>();
 
     @Override
     public String toString() {

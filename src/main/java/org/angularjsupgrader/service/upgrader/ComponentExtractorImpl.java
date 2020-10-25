@@ -35,21 +35,21 @@ public class ComponentExtractorImpl {
         JsDirective directive = new JsDirective();
         directive.originalInjectable = jsInjectable;
         if (directiveFunction == null) {
-            System.err.println("Could not find the directive for " + jsInjectable.functionName);
+            addError("Could not find the directive for " + jsInjectable.functionName, directive);
             return directive;
         }
         if (directiveFunction.statements.size() != 1) {
-            System.err.println("Can only upgrade directives with 1 statement -> " + jsInjectable.functionName);
+            addError("Can only upgrade directives with 1 statement -> " + jsInjectable.functionName, directive);
             return directive;
         }
         JsStatementBranch returnStatement = angularLocator.getFirstDescendantBranchWithMoreThan1Child(directiveFunction.statements.get(0));
         if (!returnStatement.type.equals(JavaScriptParser.ReturnStatementContext.class)) {
-            System.err.println(jsInjectable.functionName + "'s statement must be a return statement");
+            addError(jsInjectable.functionName + "'s statement must be a return statement", directive);
             return directive;
         }
         JsStatementBranch returnedObject = angularLocator.getFirstDescendantBranchWithMoreThan1Child((JsStatementBranch) returnStatement.subParts.get(1));
         if (!returnedObject.type.equals(JavaScriptParser.ObjectLiteralContext.class)) {
-            System.err.println(jsInjectable.functionName + " must return an object");
+            addError(jsInjectable.functionName + " must return an object", directive);
             return directive;
         }
 
@@ -73,13 +73,13 @@ public class ComponentExtractorImpl {
                     directive.linkFunction = propertyValue;
                     break;
                 case "replace":
-                    System.err.println("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + jsInjectable.functionName + " manually");
+                    addError("Angular2 does not support directives with 'replace': true. Please upgrade " + parentJsFile.filename + ">" + jsInjectable.functionName + " manually", directive);
                     break;
                 case "transclude":
                     directive.transclude = Boolean.parseBoolean(stringService.trimQuotes(propertyValue.toString()));
                     break;
                 default:
-                    System.err.println("Unsupported return key of '" + keyValue.getKey() + "' for " + parentJsFile.filename + ">" + jsInjectable.functionName);
+                    addError("Unsupported return key of '" + keyValue.getKey() + "' for " + parentJsFile.filename + ">" + jsInjectable.functionName, directive);
             }
         }
         return directive;
@@ -121,7 +121,7 @@ public class ComponentExtractorImpl {
                     component.reloadOnSearch = Boolean.parseBoolean(keyValue.getValue().toString());
                     break;
                 default:
-                    System.err.println("Unknown key: " + keyValue.getKey() + " for route " + parentJsFile.filename + ">" + component.path);
+                    addError("Unknown key: " + keyValue.getKey() + " for route " + parentJsFile.filename + ">" + component.path, component);
             }
         }
         return component;
@@ -205,5 +205,10 @@ public class ComponentExtractorImpl {
             }
         }
         return scope;
+    }
+
+    private void addError(final String error, final AbstractComponent component) {
+        component.upgradeErrors.add(error);
+        System.err.println(error);
     }
 }

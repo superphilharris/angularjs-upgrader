@@ -45,7 +45,7 @@ public class AngularInjectableUpgraderImpl {
             }
             tsClass.initialization.addAll(jsFunction.statements.stream().map(this::upgradeJsStatement).collect(Collectors.toList()));
         } else {
-            System.err.println("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename + " for " + jsInjectable);
+            addError("Could not find 'function " + jsInjectable.functionName + "() {...}' in " + parentJsFile.filename, tsClass);
         }
         tsClass.dependencies.addAll(jsInjectable.injections);
         tsClass.dependencies.addAll(getInjects(jsInjectable.functionName, parentJsFile));
@@ -80,5 +80,10 @@ public class AngularInjectableUpgraderImpl {
                 .findFirst();
         if (jsInjectStatement.isPresent()) return jsInjectStatement.get().injects;
         return new LinkedList<>();
+    }
+
+    private void addError(final String error, final AbstractTsClass tsClass) {
+        System.err.println(error);
+        tsClass.upgradeErrors.add(error);
     }
 }
