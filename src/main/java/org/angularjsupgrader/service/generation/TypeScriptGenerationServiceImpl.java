@@ -95,7 +95,7 @@ public class TypeScriptGenerationServiceImpl {
             templateLines.add(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
         } else {
             if (component.controllerSourcedFrom != null) {
-                templateLines.add("<!-- UPGRADE ERROR: Could not find a template for controller function:'" + component.controllerSourcedFrom.functionName + "' -->");
+                templateLines.add("<!-- UPGRADE ERROR: Could not find the template for controller function:'" + component.controllerSourcedFrom.functionName + "'\nIs it embedded inside html with the syntax: '<div ng-controller=\"" + component + "\"...' \n-->");
             } else {
                 templateLines.add("<p>" + component.name + " works!</p>");
             }
@@ -332,5 +332,10 @@ public class TypeScriptGenerationServiceImpl {
     private String lowerFirst(String upperFirst) {
         if (upperFirst == null || upperFirst.length() == 0) return upperFirst;
         return upperFirst.substring(0, 1).toLowerCase() + upperFirst.substring(1);
+    }
+
+    private void addErrorsToOutput(final List<String> output, AbstractComponent component) {
+        // TODO: add errors from component.originallySourcedFrom
+        //output.addAll(component.upgradeErrors.stream())
     }
 }
