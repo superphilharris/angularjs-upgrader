@@ -90,7 +90,7 @@ public class TypeScriptGenerationServiceImpl {
         // Template
         List<String> templateLines = new LinkedList<>();
         if (component.template != null) {
-            templateLines.add(component.template);
+            templateLines.add(htmlGenerationService.upgradeInlineTemplate(component.template));
         } else if (component.templateUrl != null) {
             templateLines.add(htmlGenerationService.upgradeTemplateUrl(component.templateUrl));
         } else {

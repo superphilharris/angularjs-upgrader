@@ -36,15 +36,25 @@ public class HtmlGenerationServiceImpl {
             System.err.println("'" + parsedTemplateUrl + "' does not exist for template");
             return "<!-- UPGRADE ERROR: Could not find file for path:'" + templateUrlWithRootRemoved + "'.\nPossibly it is embedded inside another file with the syntax:\n <script type=\"text/ng-template\" id=\"" + templateUrlWithRootRemoved + "\"...\n-->";
         } else {
-            final String upgradedTemplate = replaceAngularJsWithAngular(templateContents);
-            final List<String> errors = new LinkedList<>();
-            for (Map.Entry<String, String> oldToNewEntry : getOldToNewAttributeWarnings().entrySet()) {
-                if (upgradedTemplate.contains(oldToNewEntry.getKey())) {
-                    errors.add("<!-- UPGRADE ERROR: Found '" + oldToNewEntry.getKey() + "'. " + oldToNewEntry.getValue() + "-->\n");
-                }
-            }
-            return String.join("", errors) + upgradedTemplate;
+            return upgradeTemplate(templateContents);
         }
+    }
+
+    public String upgradeInlineTemplate(String inlineTemplate) {
+        return upgradeTemplate(
+                inlineTemplate.replace("' + '", "")
+        );
+    }
+
+    private String upgradeTemplate(String templateContents) {
+        final String upgradedTemplate = replaceAngularJsWithAngular(templateContents);
+        final List<String> errors = new LinkedList<>();
+        for (Map.Entry<String, String> oldToNewEntry : getOldToNewAttributeWarnings().entrySet()) {
+            if (upgradedTemplate.contains(oldToNewEntry.getKey())) {
+                errors.add("<!-- UPGRADE ERROR: Found '" + oldToNewEntry.getKey() + "'. " + oldToNewEntry.getValue() + "-->\n");
+            }
+        }
+        return String.join("", errors) + upgradedTemplate;
     }
 
     private String replaceAngularJsWithAngular(String templateContent) {
