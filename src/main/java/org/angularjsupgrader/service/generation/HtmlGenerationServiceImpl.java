@@ -41,8 +41,13 @@ public class HtmlGenerationServiceImpl {
     }
 
     public String upgradeInlineTemplate(String inlineTemplate) {
+        if (inlineTemplate.length() <= 2) {
+            return "";
+        }
+        String templateWithQuotesRemoved = inlineTemplate.replace("' + '", "");
+        // Remove starting and ending quotes
         return upgradeTemplate(
-                inlineTemplate.replace("' + '", "")
+                templateWithQuotesRemoved.substring(1, templateWithQuotesRemoved.length() - 1)
         );
     }
 
@@ -101,6 +106,7 @@ public class HtmlGenerationServiceImpl {
         oldToWarnings.put("ng-include", "Please create components for included files");
         oldToWarnings.put("ng-transclude", "Use <ng-container></ng-container> or separate component with element (not attribute) selector");
         oldToWarnings.put("ng-controller", "Copy the embedded html into the controller's upgraded component and create inputs for any variables bound to the parent controller's vm");
+        oldToWarnings.put("ng-repeat=\"(", "Use *ngFor=\"... | keyvalue\" syntax");
         return oldToWarnings;
     }
 
