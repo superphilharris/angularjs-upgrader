@@ -120,7 +120,7 @@ public class TypeScriptGenerationServiceImpl {
         controllerLines.add("\n\tngOnInit() {");
         controllerLines.addAll(
                 getStatementLines(component.initialization).stream()
-                        .map(line -> formatIndentsForCurlyBraces(line, 1))
+                        .map(line -> formatCode(line, 1))
                         .collect(Collectors.toList()));
         controllerLines.add("\t}\n");
         controllerLines.addAll(getClassFunctionLines(component));
@@ -168,16 +168,16 @@ public class TypeScriptGenerationServiceImpl {
         writeFile(testLines, directory + component.name + ".component.spec.ts");
     }
 
-    private String formatIndentsForCurlyBraces(String rawText, int numberOfTabs) {
+    private String formatCode(String rawText, int numberOfTabs) {
         final StringBuilder tabs = new StringBuilder();
         for (int i = 0; i < numberOfTabs; i++) tabs.append("\t");
 
         final int startCurlyBrace = rawText.indexOf("{");
-        if (startCurlyBrace >= 0 && startCurlyBrace < rawText.length() - 1) {
+        if (startCurlyBrace >= 0 && startCurlyBrace < rawText.length() - 1 && false) {
             String beforeCurlyBrace = rawText.substring(0, startCurlyBrace + 1);
             String afterCurlyBrace = rawText.substring(startCurlyBrace + 2);
             return tabs.toString() + beforeCurlyBrace + "\n" +
-                    formatIndentsForCurlyBraces(afterCurlyBrace, numberOfTabs + 1);
+                    formatCode(afterCurlyBrace, numberOfTabs + 1);
         }
 
         return tabs.toString() + rawText;
@@ -198,7 +198,7 @@ public class TypeScriptGenerationServiceImpl {
             serviceLines.add("\tinit() {");
             serviceLines.addAll(
                     getStatementLines(service.initialization).stream()
-                            .map(line -> formatIndentsForCurlyBraces(line, 1))
+                            .map(line -> formatCode(line, 1))
                             .collect(Collectors.toList()));
             serviceLines.add("\t}");
         }
@@ -276,7 +276,7 @@ public class TypeScriptGenerationServiceImpl {
             classFunctionLines.add("");
             classFunctionLines.addAll(
                     getFunctionLines(function).stream()
-                            .map(line -> formatIndentsForCurlyBraces(line, 1))
+                            .map(line -> formatCode(line, 1))
                             .collect(Collectors.toList()));
         }
         return classFunctionLines;
@@ -292,7 +292,7 @@ public class TypeScriptGenerationServiceImpl {
             functionLines.add("\tfunction " + childFunctionLines.get(0)); // Only inner children have the `function` prefix
             functionLines.addAll(
                     childFunctionLines.subList(1, childFunctionLines.size()).stream()
-                            .map(line -> formatIndentsForCurlyBraces(line, 1)).collect(Collectors.toList()));
+                            .map(line -> formatCode(line, 1)).collect(Collectors.toList()));
             functionLines.add("");
         }
         functionLines.addAll(getStatementLines(function.statements));
@@ -302,7 +302,7 @@ public class TypeScriptGenerationServiceImpl {
 
     private List<String> getStatementLines(List<TsStatement> statements) {
         return statements.stream()
-                .map(tsStatement -> formatIndentsForCurlyBraces(tsStatement.text, 1))
+                .map(tsStatement -> formatCode(tsStatement.text, 1))
                 .collect(Collectors.toList());
     }
 
