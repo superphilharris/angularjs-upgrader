@@ -9,7 +9,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Created by Philip Harris on 13/10/2020
@@ -70,7 +69,12 @@ public class HtmlGenerationServiceImpl {
                 .replace(" ng-switch-when=", " *ngSwitchCase=")
                 .replace(" ng-switch-default", " *ngSwitchDefault")
                 .replace(" ng-change=", " (change)=")
+                .replace(" ng-value=", " [value]=")
+                .replace(" ng-checked=", " [checked]=")
+                .replace(" ng-blur=", " (blur)=")
+                .replace(" ng-minlength=", " [minlength]=")
                 .replace(" ng-bind=", " [textContent]=")
+                .replace(" ng-focus=", " (focus)=")
                 .replaceAll(" ng-repeat=\"([a-zA-Z]*) in ", " *ngFor=\"let $1 of ")
                 .replaceAll(" ([a-zA-Z]*)=\"\\{\\{([^}]*)}}\"", " [$1]=\"$2\"");
     }
@@ -86,6 +90,7 @@ public class HtmlGenerationServiceImpl {
         //oldToWarnings.put("ng-hide", "*ngIf=\"!...\", except that ngIf doesn't initialize embedded components, whereas ng-hide does");
         oldToWarnings.put("ng-include", "Please create components for included files");
         oldToWarnings.put("ng-transclude", "Use <ng-container></ng-container> or separate component with element (not attribute) selector");
+        oldToWarnings.put("ng-controller", "Copy the embedded html into the controller's upgraded component and create inputs for any variables bound to the parent controller's vm");
         return oldToWarnings;
     }
 
