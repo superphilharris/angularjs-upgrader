@@ -33,7 +33,6 @@ public class HtmlGenerationServiceImpl {
         final String templateContents = fileListerService.getFileMatchingPath(parsedTemplateUrl);
 
         if (templateContents == null) {
-            System.err.println("'" + parsedTemplateUrl + "' does not exist for template");
             return "<!-- UPGRADE ERROR: Could not find file for path:'" + templateUrlWithRootRemoved + "'.\nPossibly it is embedded inside another file with the syntax:\n <script type=\"text/ng-template\" id=\"" + templateUrlWithRootRemoved + "\"...\n-->";
         } else {
             return upgradeTemplate(templateContents);
