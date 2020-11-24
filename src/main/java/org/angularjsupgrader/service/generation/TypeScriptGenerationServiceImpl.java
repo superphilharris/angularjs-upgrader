@@ -169,8 +169,16 @@ public class TypeScriptGenerationServiceImpl {
     }
 
     private String formatIndentsForCurlyBraces(String rawText, int numberOfTabs) {
-        StringBuilder tabs = new StringBuilder();
+        final StringBuilder tabs = new StringBuilder();
         for (int i = 0; i < numberOfTabs; i++) tabs.append("\t");
+
+        final int startCurlyBrace = rawText.indexOf("{");
+        if (startCurlyBrace >= 0 && startCurlyBrace < rawText.length() - 1) {
+            String beforeCurlyBrace = rawText.substring(0, startCurlyBrace + 1);
+            String afterCurlyBrace = rawText.substring(startCurlyBrace + 2);
+            return tabs.toString() + beforeCurlyBrace + "\n" +
+                    formatIndentsForCurlyBraces(afterCurlyBrace, numberOfTabs + 1);
+        }
 
         return tabs.toString() + rawText;
     }
