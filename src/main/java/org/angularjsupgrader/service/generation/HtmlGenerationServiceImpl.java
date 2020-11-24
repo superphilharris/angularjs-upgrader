@@ -6,7 +6,10 @@ import org.angularjsupgrader.service.FileListerServiceImpl;
 import org.angularjsupgrader.service.upgrader.StringServiceImpl;
 
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Created by Philip Harris on 13/10/2020
@@ -34,7 +37,14 @@ public class HtmlGenerationServiceImpl {
             System.err.println("'" + parsedTemplateUrl + "' does not exist for template");
             return "<!-- UPGRADE ERROR: Could not find file for path:'" + templateUrlWithRootRemoved + "'.\nPossibly it is embedded inside another file with the syntax:\n <script type=\"text/ng-template\" id=\"" + templateUrlWithRootRemoved + "\"...\n-->";
         } else {
-            return replaceAngularJsWithAngular(templateContents);
+            final String upgradedTemplate = replaceAngularJsWithAngular(templateContents);
+            final List<String> errors = new LinkedList<>();
+            for (Map.Entry<String, String> oldToNewEntry : getOldToNewAttributeWarnings().entrySet()) {
+                if (upgradedTemplate.contains(oldToNewEntry.getKey())) {
+                    errors.add("<!-- UPGRADE ERROR: Found '" + oldToNewEntry.getKey() + "'. " + oldToNewEntry.getValue() + "-->\n");
+                }
+            }
+            return String.join("", errors) + upgradedTemplate;
         }
     }
 
@@ -71,11 +81,11 @@ public class HtmlGenerationServiceImpl {
 
     private Map<String, String> getOldToNewAttributeWarnings() {
         final Map<String, String> oldToWarnings = new HashMap<>();
-        oldToWarnings.put("ng-options", "*ngFor with looping through option elements");
+        oldToWarnings.put("ng-options", "Use *ngFor with looping through option elements");
         //oldToWarnings.put("ng-show", "*ngIf except ngIf doesn't initialize embedded components, whereas ng-show does");
         //oldToWarnings.put("ng-hide", "*ngIf=\"!...\", except that ngIf doesn't initialize embedded components, whereas ng-hide does");
-        oldToWarnings.put("ng-include", "need to create components for included files");
-        oldToWarnings.put("ng-transclude", "use <ng-container></ng-container> or separate component with element (not attribute) selector");
+        oldToWarnings.put("ng-include", "Please create components for included files");
+        oldToWarnings.put("ng-transclude", "Use <ng-container></ng-container> or separate component with element (not attribute) selector");
         return oldToWarnings;
     }
 
