@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -118,10 +119,7 @@ public class TypeScriptGenerationServiceImpl {
         // TODO: add in @Input() and @Output
         controllerLines.addAll(getConstructor(component));
         controllerLines.add("\n\tngOnInit() {");
-        controllerLines.addAll(
-                getStatementLines(component.initialization).stream()
-                        .map(line -> formatCode(line, 1))
-                        .collect(Collectors.toList()));
+        controllerLines.addAll(getStatementLines(component.initialization, 2));
         controllerLines.add("\t}\n");
         controllerLines.addAll(getClassFunctionLines(component));
 
@@ -169,18 +167,27 @@ public class TypeScriptGenerationServiceImpl {
     }
 
     private String formatCode(String rawText, int numberOfTabs) {
-        final StringBuilder tabs = new StringBuilder();
-        for (int i = 0; i < numberOfTabs; i++) tabs.append("\t");
+        final StringBuilder tabBuilder = new StringBuilder();
+        for (int i = 0; i < numberOfTabs; i++) tabBuilder.append("\t");
+        final String tabs = tabBuilder.toString();
 
         final int startCurlyBrace = rawText.indexOf("{");
-        if (startCurlyBrace >= 0 && startCurlyBrace < rawText.length() - 1 && false) {
-            String beforeCurlyBrace = rawText.substring(0, startCurlyBrace + 1);
-            String afterCurlyBrace = rawText.substring(startCurlyBrace + 2);
-            return tabs.toString() + beforeCurlyBrace + "\n" +
-                    formatCode(afterCurlyBrace, numberOfTabs + 1);
+        final int endCurlyBrace = rawText.indexOf("}");
+        if (startCurlyBrace < endCurlyBrace && startCurlyBrace != -1) {
+            final String beforeCurlyBrace = rawText.substring(0, startCurlyBrace + 1);
+            return tabs + beforeCurlyBrace + "\n" +
+                    formatCode(rawText.substring(startCurlyBrace + 2), numberOfTabs + 1);
+        } else if (endCurlyBrace > -1 && numberOfTabs > 0) {
+            final String beforeCurlyBrace = rawText.substring(0, endCurlyBrace);
+            return tabs + beforeCurlyBrace + "\n" +
+                    tabs.substring(1) + "}\n" + formatCode(rawText.substring(endCurlyBrace + 1), numberOfTabs - 1);
         }
 
-        return tabs.toString() + rawText;
+        return tabs + rawText;
+//                Arrays.stream(rawText.split(";"))
+//                        .filter(line -> line.trim().length() > 0)
+//                        .map(line -> tabs.toString() + line + ";")
+//                        .collect(Collectors.joining("\n"));
     }
 
     private void generateService(TsService service, String parentDirectory) throws UpgraderException {
@@ -196,10 +203,7 @@ public class TypeScriptGenerationServiceImpl {
         serviceLines.addAll(getConstructor(service));
         if (service.initialization.size() > 0) {
             serviceLines.add("\tinit() {");
-            serviceLines.addAll(
-                    getStatementLines(service.initialization).stream()
-                            .map(line -> formatCode(line, 1))
-                            .collect(Collectors.toList()));
+            serviceLines.addAll(getStatementLines(service.initialization, 2));
             serviceLines.add("\t}");
         }
         serviceLines.addAll(getClassFunctionLines(service));
@@ -275,34 +279,33 @@ public class TypeScriptGenerationServiceImpl {
         for (TsFunction function : tsClass.functions) {
             classFunctionLines.add("");
             classFunctionLines.addAll(
-                    getFunctionLines(function).stream()
-                            .map(line -> formatCode(line, 1))
-                            .collect(Collectors.toList()));
+                    new ArrayList<>(getFunctionLines(function, 1)));
         }
         return classFunctionLines;
     }
 
-    private List<String> getFunctionLines(TsFunction function) {
+    private List<String> getFunctionLines(TsFunction function, int numberOfTabs) {
         if (function == null) return Collections.singletonList("");
 
         List<String> functionLines = new LinkedList<>();
-        functionLines.add(function.name + "(" + String.join(", ", function.arguments) + ") {");
+        functionLines.add("\t" + function.name + "(" + String.join(", ", function.arguments) + ") {");
         for (TsFunction childFunction : function.childFunctions) {
-            List<String> childFunctionLines = getFunctionLines(childFunction);
+            List<String> childFunctionLines = getFunctionLines(childFunction, numberOfTabs + 1);
             functionLines.add("\tfunction " + childFunctionLines.get(0)); // Only inner children have the `function` prefix
             functionLines.addAll(
                     childFunctionLines.subList(1, childFunctionLines.size()).stream()
-                            .map(line -> formatCode(line, 1)).collect(Collectors.toList()));
+                            .map(line -> formatCode(line, numberOfTabs))
+                            .collect(Collectors.toList()));
             functionLines.add("");
         }
-        functionLines.addAll(getStatementLines(function.statements));
-        functionLines.add("}");
+        functionLines.addAll(getStatementLines(function.statements, 2));
+        functionLines.add("\t}");
         return functionLines;
     }
 
-    private List<String> getStatementLines(List<TsStatement> statements) {
+    private List<String> getStatementLines(List<TsStatement> statements, int numberOfTabs) {
         return statements.stream()
-                .map(tsStatement -> formatCode(tsStatement.text, 1))
+                .map(tsStatement -> formatCode(tsStatement.text, numberOfTabs))
                 .collect(Collectors.toList());
     }
 
