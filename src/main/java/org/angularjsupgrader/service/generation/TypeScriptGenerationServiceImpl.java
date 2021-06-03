@@ -179,14 +179,18 @@ public class TypeScriptGenerationServiceImpl {
                     formatCode(rawText.substring(startCurlyBrace + 2), numberOfTabs + 1);
         } else if (endCurlyBrace > -1 && numberOfTabs > 0) {
             final String beforeCurlyBrace = rawText.substring(0, endCurlyBrace);
+            final String afterCurlyBrace = rawText.substring(endCurlyBrace + 1);
+            final int closeCurlyPos = afterCurlyBrace.indexOf("}");
+            final int semiColonPos = afterCurlyBrace.indexOf(";");
+            final boolean includeNewLine = closeCurlyPos <= 2;
             return tabs + beforeCurlyBrace + "\n" +
-                    tabs.substring(1) + "}\n" + formatCode(rawText.substring(endCurlyBrace + 1), numberOfTabs - 1);
+                    tabs.substring(1) + "}" + (includeNewLine ? "\n" : "") + formatCode(afterCurlyBrace, numberOfTabs - 1);
         }
 
         return tabs + rawText;
 //                Arrays.stream(rawText.split(";"))
-//                        .filter(line -> line.trim().length() > 0)
-//                        .map(line -> tabs.toString() + line + ";")
+//                        .filters(line -> line.trim().length() > 0)
+//                        .map(line -> tab.toString() + line + ";")
 //                        .collect(Collectors.joining("\n"));
     }
 
